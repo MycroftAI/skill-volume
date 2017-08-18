@@ -51,6 +51,11 @@ class VolumeSkill(MycroftSkill):
         self.min_volume = self.config.get('min_volume')
         self.max_volume = self.config.get('max_volume')
         self.volume_sound = join(dirname(__file__), "blop-mark-diangelo.wav")
+        try:
+            Mixer()
+        except:
+            LOGGER.warning('Weird first access to Mixer() error workaround ' +
+                           'still triggering. This should be fixed properly.')
 
     def initialize(self):
         self.__build_set_volume()
