@@ -81,6 +81,14 @@ class VolumeSkill(MycroftSkill):
             "ResetVolumeKeyword").build()
         self.register_intent(intent, self.handle_reset_volume)
 
+        try:
+            self.add_event('mycroft.volume.increase',
+                           self.handle_increase_volume)
+            self.add_event('mycroft.volume.decrease',
+                           self.handle_decrease_volume)
+        except:
+            pass
+
     def handle_set_volume(self, message):
         mixer = Mixer()
         level = self.get_volume_level(message, mixer.getvolume()[0])
