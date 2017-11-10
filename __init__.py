@@ -111,7 +111,14 @@ class VolumeSkill(MycroftSkill):
         self.__update_volume(+1)
 
     def handle_decrease_volume(self, message):
-        self.__update_volume(-1)
+        level = Mixer().getvolume()[0]
+        # turn down the volume FAST if it's too loud!
+        if level >= 93:
+            self.__update_volume(-3)
+        elif level >= 86:
+            self.__update_volume(-2)
+        else:
+            self.__update_volume(-1)
 
     def handle_mute_volume(self, message):
         Mixer().setvolume(0)
@@ -166,18 +173,14 @@ class VolumeSkill(MycroftSkill):
         return new_level, new_level != old_level
 
     def get_volume_level(self, message, default=None):
-        level_str = message.data.get('VolumeAmount', default)
+        level_str = str(message.data.get('VolumeAmount', default))
         level = self.default_level
 
-        LOGGER.info("level is " + level_str)
         matches = re.match(r"(^\d{1,3})%", level_str)
         if matches: 
-            LOGGER.info("matches! " + matches.group(1))
             req_vol = float(matches.group(1))
             if req_vol <= 100 and req_vol >= 0:
-                LOGGER.info("and it's in the range")
                 level = req_vol/10
-                LOGGER.info("and now it's..." + str(level))
         else:
             try:
                 level = self.VOLUME_WORDS[level_str]
@@ -187,9 +190,7 @@ class VolumeSkill(MycroftSkill):
                 except ValueError:
                     pass
 
-        LOGGER.info("I wanted to set it to " + str(level))
         level = self.bound_level(level)
-        LOGGER.info(" but I'm setting it to " + str(level))
         return level
 
     def stop(self):
