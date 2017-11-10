@@ -26,6 +26,8 @@ from mycroft.skills.core import MycroftSkill
 from mycroft.util import play_wav
 from mycroft.util.log import getLogger
 
+import re
+
 __author__ = 'jdorleans'
 
 LOGGER = getLogger(__name__)
@@ -38,11 +40,12 @@ class VolumeSkill(MycroftSkill):
     """
 
     MIN_LEVEL = 0
-    MAX_LEVEL = 11
+    MAX_LEVEL = 10
     VOLUME_WORDS = {
         'loud': 9,
         'normal': 6,
-        'quiet': 3
+        'quiet': 3,
+	'zero': 0,
     }
 
     def __init__(self):
@@ -93,7 +96,6 @@ class VolumeSkill(MycroftSkill):
         mixer = Mixer()
         level = self.get_volume_level(message, mixer.getvolume()[0])
         mixer.setvolume(self.level_to_volume(level))
-        self.speak_dialog('set.volume', data={'volume': level})
 
     def communicate_volume_change(self, message, dialog, code, changed):
         play_sound = message.data.get('play_sound', False)
@@ -106,21 +108,16 @@ class VolumeSkill(MycroftSkill):
             self.speak_dialog(dialog, data={'volume': code})
 
     def handle_increase_volume(self, message):
-        self.communicate_volume_change(message, 'increase.volume',
-                                       *self.__update_volume(+1))
+        self.__update_volume(+1)
 
     def handle_decrease_volume(self, message):
-        self.communicate_volume_change(message, 'decrease.volume',
-                                       *self.__update_volume(-1))
+        self.__update_volume(-1)
 
     def handle_mute_volume(self, message):
-        self.speak_dialog('mute.volume')
-        time.sleep(2)
         Mixer().setvolume(0)
 
     def handle_reset_volume(self, message):
         Mixer().setvolume(self.level_to_volume(self.default_level))
-        self.speak_dialog('reset.volume', data={'volume': self.default_level})
 
     def volume_to_level(self, volume):
         """
@@ -172,15 +169,27 @@ class VolumeSkill(MycroftSkill):
         level_str = message.data.get('VolumeAmount', default)
         level = self.default_level
 
-        try:
-            level = self.VOLUME_WORDS[level_str]
-        except KeyError:
+        LOGGER.info("level is " + level_str)
+        matches = re.match(r"(^\d{1,3})%", level_str)
+        if matches: 
+            LOGGER.info("matches! " + matches.group(1))
+            req_vol = float(matches.group(1))
+            if req_vol <= 100 and req_vol >= 0:
+                LOGGER.info("and it's in the range")
+                level = req_vol/10
+                LOGGER.info("and now it's..." + str(level))
+        else:
             try:
-                level = int(level_str)
-            except ValueError:
-                pass
+                level = self.VOLUME_WORDS[level_str]
+            except KeyError:
+                try:
+                    level = float(level_str)
+                except ValueError:
+                    pass
 
+        LOGGER.info("I wanted to set it to " + str(level))
         level = self.bound_level(level)
+        LOGGER.info(" but I'm setting it to " + str(level))
         return level
 
     def stop(self):
