@@ -1,8 +1,8 @@
 {
   "utterance": "change volume to loud",
-  "intent_type": "SetVolumeIntent",
+  "intent_type": "SetVolume",
   "intent": {
-    "VolumeKeyword": "volume",
-    "VolumeAmount": "loud"
+    "Volume": "volume",
+    "Level": "loud"
   }
 }
