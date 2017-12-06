@@ -1,44 +1,40 @@
-# Copyright 2016 Mycroft AI, Inc.
+# Copyright 2017 Mycroft AI Inc.
 #
-# This file is part of Mycroft Core.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# Mycroft Core is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+#    http://www.apache.org/licenses/LICENSE-2.0
 #
-# Mycroft Core is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
-# You should have received a copy of the GNU General Public License
-# along with Mycroft Core.  If not, see <http://www.gnu.org/licenses/>.
-
-
 import time
 from alsaaudio import Mixer
-
-from adapt.intent import IntentBuilder
 from os.path import dirname, join
 
-from mycroft.skills.core import MycroftSkill
+from adapt.intent import IntentBuilder
+from mycroft.skills.core import MycroftSkill, intent_handler
 from mycroft.util import play_wav
-from mycroft.util.log import getLogger
-
-__author__ = 'jdorleans'
-
-LOGGER = getLogger(__name__)
+from mycroft.audio import wait_while_speaking
 
 
 class VolumeSkill(MycroftSkill):
     """
-    "Level" refers to the custom units from 0 to 11
-    "Volume" refers to the ALSA mixer setting from 0 to 100
+    Control the audio volume for the Mycroft system
+
+    Terminology:
+       "Level" =  Mycroft volume levels, from 0 to 11
+       "Volume" = ALSA mixer setting, from 0 to 100
     """
 
     MIN_LEVEL = 0
     MAX_LEVEL = 11
+
+    # TODO: Translation layer (have to match word in Level.voc)
     VOLUME_WORDS = {
         'loud': 9,
         'normal': 6,
@@ -54,48 +50,56 @@ class VolumeSkill(MycroftSkill):
         try:
             Mixer()
         except:
-            LOGGER.warning('Weird first access to Mixer() error workaround ' +
-                           'still triggering. This should be fixed properly.')
+            self.log.warning('HACK: first access to Mixer() error workaround')
 
     def initialize(self):
-        self.__build_set_volume()
-
-    def __build_set_volume(self):
-        intent = IntentBuilder("SetVolumeIntent").require(
-            "VolumeKeyword").require("VolumeAmount").build()
-        self.register_intent(intent, self.handle_set_volume)
-
-        intent = IntentBuilder("IncreaseVolumeIntent").require(
-            "IncreaseVolumeKeyword").build()
+        self.log.info("********** Reeg handlers")
+        
+        intent = IntentBuilder("IncreaseVolume").require("Volume").require("Increase"
+                               ).build()
         self.register_intent(intent, self.handle_increase_volume)
 
-        intent = IntentBuilder("DecreaseVolumeIntent").require(
-            "DecreaseVolumeKeyword").build()
+        intent = IntentBuilder("DecreaseVolume").require("Volume").require("Decrease"
+                               ).build()
         self.register_intent(intent, self.handle_decrease_volume)
 
-        intent = IntentBuilder("MuteVolumeIntent").require(
-            "MuteVolumeKeyword").build()
+        intent = IntentBuilder("MuteVolume").require("Volume").require("Mute"
+                               ).build()
         self.register_intent(intent, self.handle_mute_volume)
 
-        intent = IntentBuilder("ResetVolumeIntent").require(
-            "ResetVolumeKeyword").build()
-        self.register_intent(intent, self.handle_reset_volume)
+        intent = IntentBuilder("UnmuteVolume").require("Volume").require("Unmute"
+                               ).build()
+        self.register_intent(intent, self.handle_unmute_volume)
 
         try:
+            # Register handlers for messagebus events
             self.add_event('mycroft.volume.increase',
                            self.handle_increase_volume)
             self.add_event('mycroft.volume.decrease',
                            self.handle_decrease_volume)
+            self.add_event('mycroft.volume.mute',
+                           self.handle_mute_volume)
+            self.add_event('mycroft.volume.unmute',
+                           self.handle_unmute_volume)
+            self.log.info("********** Handlers registered")
         except:
             pass
 
+    @intent_handler(IntentBuilder("SetVolume").require(
+        "Volume").require("Level"))
     def handle_set_volume(self, message):
         mixer = Mixer()
-        level = self.get_volume_level(message, mixer.getvolume()[0])
-        mixer.setvolume(self.level_to_volume(level))
+        level = self.__get_volume_level(message, mixer.getvolume()[0])
+        mixer.setvolume(self.__level_to_volume(level))
         self.speak_dialog('set.volume', data={'volume': level})
 
-    def communicate_volume_change(self, message, dialog, code, changed):
+    @intent_handler(IntentBuilder("QueryVolume").require(
+        "Volume").require("Query"))
+    def handle_query_volume(self, message):
+        level = self.__get_volume_level(message, mixer.getvolume()[0])
+        self.speak_dialog('volume.is', data={'volume': level})
+
+    def __communicate_volume_change(self, message, dialog, code, changed):
         play_sound = message.data.get('play_sound', False)
         if play_sound:
             if changed:
@@ -105,27 +109,44 @@ class VolumeSkill(MycroftSkill):
                 dialog = 'already.max.volume'
             self.speak_dialog(dialog, data={'volume': code})
 
+#    @intent_handler(IntentBuilder("IncreaseVolume").require(
+#        "Volume").require("Increase"))
     def handle_increase_volume(self, message):
-        self.communicate_volume_change(message, 'increase.volume',
-                                       *self.__update_volume(+1))
+        self.__communicate_volume_change(message, 'increase.volume',
+                                         *self.__update_volume(+1))
 
+#    @intent_handler(IntentBuilder("DecreaseVolume").require(
+#        "Volume").require("Decrease"))
     def handle_decrease_volume(self, message):
-        self.communicate_volume_change(message, 'decrease.volume',
-                                       *self.__update_volume(-1))
+        self.__communicate_volume_change(message, 'decrease.volume',
+                                        *self.__update_volume(-1))
 
+#    @intent_handler(IntentBuilder("MuteVolume").require(
+#        "Volume").require("Mute"))
     def handle_mute_volume(self, message):
-        self.speak_dialog('mute.volume')
-        time.sleep(2)
+        speak_message = message.data.get('speak_message', True)
+        if speak_message:
+            self.speak_dialog('mute.volume')
+            wait_while_speaking()
         Mixer().setvolume(0)
 
-    def handle_reset_volume(self, message):
-        Mixer().setvolume(self.level_to_volume(self.default_level))
-        self.speak_dialog('reset.volume', data={'volume': self.default_level})
+#    @intent_handler(IntentBuilder("UnmuteVolume").require(
+#        "Volume").require("Unmute"))
+    def handle_unmute_volume(self, message):
+        Mixer().setvolume(self.__level_to_volume(self.default_level))
+        speak_message = message.data.get('speak_message', True)
+        if speak_message:
+            self.speak_dialog('reset.volume',
+                              data={'volume': self.default_level})
 
-    def volume_to_level(self, volume):
+    def __volume_to_level(self, volume):
         """
-        :param volume: min_volume..max_volume
-        :rtype int
+        Convert a 'volume' to a 'level'
+
+        Args:
+            volume (int): min_volume..max_volume
+        Returns:
+            int: the equivalent level
         """
         range = self.MAX_LEVEL - self.MIN_LEVEL
         prop = float(volume - self.min_volume) / self.max_volume
@@ -136,10 +157,14 @@ class VolumeSkill(MycroftSkill):
             level = self.MIN_LEVEL
         return level
 
-    def level_to_volume(self, level):
+    def __level_to_volume(self, level):
         """
-        :param level: 0..MAX_LEVEL
-        :rtype int
+        Convert a 'level' to a 'volume'
+
+        Args:
+            level (int): 0..MAX_LEVEL
+        Returns:
+            int: the equivalent volume
         """
         range = self.max_volume - self.min_volume
         prop = float(level) / self.MAX_LEVEL
@@ -148,7 +173,7 @@ class VolumeSkill(MycroftSkill):
         return volume
 
     @staticmethod
-    def bound_level(level):
+    def __bound_level(level):
         if level > VolumeSkill.MAX_LEVEL:
             level = VolumeSkill.MAX_LEVEL
         elif level < VolumeSkill.MIN_LEVEL:
@@ -157,19 +182,24 @@ class VolumeSkill(MycroftSkill):
 
     def __update_volume(self, change=0):
         """
-        Tries to change volume level
-        :param change: +1 or -1; the step to change by
-        :return: new code (0..11), whether volume changed
+        Attempt to change audio level
+
+        Args:
+            change (int): +1 or -1; the step to change by
+
+        Returns:
+            int: new level code (0..11)
+            bool: whether level changed
         """
         mixer = Mixer()
-        old_level = self.volume_to_level(mixer.getvolume()[0])
-        new_level = self.bound_level(old_level + change)
+        old_level = self.__volume_to_level(mixer.getvolume()[0])
+        new_level = self.__bound_level(old_level + change)
         self.enclosure.eyes_volume(new_level)
-        mixer.setvolume(self.level_to_volume(new_level))
+        mixer.setvolume(self.__level_to_volume(new_level))
         return new_level, new_level != old_level
 
-    def get_volume_level(self, message, default=None):
-        level_str = message.data.get('VolumeAmount', default)
+    def __get_volume_level(self, message, default=None):
+        level_str = message.data.get('Level', default)
         level = self.default_level
 
         try:
@@ -177,14 +207,15 @@ class VolumeSkill(MycroftSkill):
         except KeyError:
             try:
                 level = int(level_str)
+                if (level > self.MAX_LEVEL):
+                    # Guess that the user said something like 100 percent
+                    # so convert that into a level value
+                    level = self.MAX_LEVEL * level/100
             except ValueError:
                 pass
 
-        level = self.bound_level(level)
+        level = self.__bound_level(level)
         return level
-
-    def stop(self):
-        pass
 
 
 def create_skill():

@@ -1,8 +1,8 @@
 {
   "utterance": "update volume to normal",
-  "intent_type": "SetVolumeIntent",
+  "intent_type": "SetVolume",
   "intent": {
-    "VolumeKeyword": "volume",
-    "VolumeAmount": "normal"
+    "Volume": "volume",
+    "Level": "normal"
   }
 }

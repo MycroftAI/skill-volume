@@ -1,7 +1,8 @@
 {
   "utterance": "reduce volume",
-  "intent_type": "DecreaseVolumeIntent",
+  "intent_type": "DecreaseVolume",
   "intent": {
-    "DecreaseVolumeKeyword": "reduce volume"
+    "Volume": "volume",
+    "Decrease": "reduce"
   }
 }
