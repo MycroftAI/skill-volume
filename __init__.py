@@ -48,9 +48,13 @@ class VolumeSkill(MycroftSkill):
         self.max_volume = self.config.get('max_volume')
         self.volume_sound = join(dirname(__file__), "blop-mark-diangelo.wav")
         try:
-            Mixer()
-        except:
-            self.log.warning('HACK: first access to Mixer() error workaround')
+            self.mixer = Mixer()
+        except Exception:
+            # Retry instanciating the mixer
+            try:
+                self.mixer = Mixer()
+            except Exception as e:
+                self.log.error('Couldn\'t allocate mixer, {}'.format(repr(e)))
 
     def initialize(self):
         self.log.info("********** Reeg handlers")
@@ -88,15 +92,14 @@ class VolumeSkill(MycroftSkill):
     @intent_handler(IntentBuilder("SetVolume").require(
         "Volume").require("Level"))
     def handle_set_volume(self, message):
-        mixer = Mixer()
-        level = self.__get_volume_level(message, mixer.getvolume()[0])
-        mixer.setvolume(self.__level_to_volume(level))
+        level = self.__get_volume_level(message, self.mixer.getvolume()[0])
+        self.mixer.setvolume(self.__level_to_volume(level))
         self.speak_dialog('set.volume', data={'volume': level})
 
     @intent_handler(IntentBuilder("QueryVolume").require(
         "Volume").require("Query"))
     def handle_query_volume(self, message):
-        level = self.__get_volume_level(message, mixer.getvolume()[0])
+        level = self.__get_volume_level(message, self.mixer.getvolume()[0])
         self.speak_dialog('volume.is', data={'volume': level})
 
     def __communicate_volume_change(self, message, dialog, code, changed):
@@ -128,12 +131,12 @@ class VolumeSkill(MycroftSkill):
         if speak_message:
             self.speak_dialog('mute.volume')
             wait_while_speaking()
-        Mixer().setvolume(0)
+        self.mixer.setvolume(0)
 
 #    @intent_handler(IntentBuilder("UnmuteVolume").require(
 #        "Volume").require("Unmute"))
     def handle_unmute_volume(self, message):
-        Mixer().setvolume(self.__level_to_volume(self.default_level))
+        self.mixer.setvolume(self.__level_to_volume(self.default_level))
         speak_message = message.data.get('speak_message', True)
         if speak_message:
             self.speak_dialog('reset.volume',
@@ -191,11 +194,10 @@ class VolumeSkill(MycroftSkill):
             int: new level code (0..11)
             bool: whether level changed
         """
-        mixer = Mixer()
-        old_level = self.__volume_to_level(mixer.getvolume()[0])
+        old_level = self.__volume_to_level(self.mixer.getvolume()[0])
         new_level = self.__bound_level(old_level + change)
         self.enclosure.eyes_volume(new_level)
-        mixer.setvolume(self.__level_to_volume(new_level))
+        self.mixer.setvolume(self.__level_to_volume(new_level))
         return new_level, new_level != old_level
 
     def __get_volume_level(self, message, default=None):
