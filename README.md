@@ -13,5 +13,4 @@ button on a Mark 1.
 * "Set volume to 75 percent"
 
 ## Credits 
-Mycroft AI
-
+@MycroftAI
