@@ -19,7 +19,7 @@ Mycroft AI (@MycroftAI)
 platform_mark1 
 
 ## Category
-**music**
+**Music**
 
 ## Tags
 #volume
