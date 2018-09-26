@@ -13,7 +13,7 @@
 # limitations under the License.
 #
 import time
-from alsaaudio import Mixer
+from alsaaudio import Mixer, mixers as alsa_mixers
 from os.path import dirname, join
 
 from adapt.intent import IntentBuilder
@@ -48,7 +48,12 @@ class VolumeSkill(MycroftSkill):
         self.max_volume = self.config.get('max_volume')
         self.volume_sound = join(dirname(__file__), "blop-mark-diangelo.wav")
         try:
-            self.mixer = Mixer()
+            # If there are only 1 mixer use that one
+            mixers = alsa_mixers()
+            if len(mixers) == 1:
+                self.mixer = Mixer(mixers[0])
+            else:  # Try using the default mixer
+                self.mixer = Mixer()
         except Exception:
             # Retry instanciating the mixer
             try:
