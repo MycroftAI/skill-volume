@@ -1,2 +1,3 @@
-El volumen está en {{volume}}
-Cambio el volumen a {{volume}}
+Volumen puesto en {{volume}}
+Volumen actualizado a {{volume}}
+Volumen cambiado a {{volume}}
