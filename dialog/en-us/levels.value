@@ -1,0 +1,13 @@
+# name, volume level (0-11)
+eleven,11
+maximum,10
+highest,10
+loudest,10
+loud,9
+normal,6
+quiet,3
+low,3
+minimum,1
+lowest,1
+off,0
+muted,0
