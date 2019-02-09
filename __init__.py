@@ -20,6 +20,7 @@ from adapt.intent import IntentBuilder
 from mycroft.skills.core import MycroftSkill, intent_handler
 from mycroft.util import play_wav
 from mycroft.audio import wait_while_speaking
+from mycroft.util.parse import extract_number
 
 
 class VolumeSkill(MycroftSkill):
@@ -62,8 +63,9 @@ class VolumeSkill(MycroftSkill):
                 self.log.error('Couldn\'t allocate mixer, {}'.format(repr(e)))
 
     def initialize(self):
-        self.log.info("********** Reeg handlers")
-        
+        for i in range(101): # numbers 0 to 100
+            self.register_vocabulary(str(i) + '%', 'Percent')
+
         intent = IntentBuilder("IncreaseVolume").require("Volume").require("Increase"
                                ).build()
         self.register_intent(intent, self.handle_increase_volume)
@@ -100,6 +102,14 @@ class VolumeSkill(MycroftSkill):
         level = self.__get_volume_level(message, self.mixer.getvolume()[0])
         self.mixer.setvolume(self.__level_to_volume(level))
         self.speak_dialog('set.volume', data={'volume': level})
+
+    @intent_handler(IntentBuilder("SetVolumePercent").require(
+        "Volume").require("Percent"))
+    def handle_set_volume_percent(self, message):
+        percent = extract_number(message.data['utterance'].replace('%', ''))
+        percent = int(percent)
+        self.mixer.setvolume(percent)
+        self.speak_dialog('set.volume.percent', data={'level': percent})
 
     @intent_handler(IntentBuilder("QueryVolume").require(
         "Volume").require("Query"))
