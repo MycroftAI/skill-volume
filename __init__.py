@@ -63,38 +63,35 @@ class VolumeSkill(MycroftSkill):
                 self.log.error('Couldn\'t allocate mixer, {}'.format(repr(e)))
 
     def initialize(self):
+        # Register handlers to detect percentages as reported by STT
         for i in range(101): # numbers 0 to 100
             self.register_vocabulary(str(i) + '%', 'Percent')
 
-        intent = IntentBuilder("IncreaseVolume").require("Volume").require("Increase"
-                               ).build()
+        intent = IntentBuilder("IncreaseVolume").require("Volume") \
+                .require("Increase").build()
         self.register_intent(intent, self.handle_increase_volume)
 
-        intent = IntentBuilder("DecreaseVolume").require("Volume").require("Decrease"
-                               ).build()
+        intent = IntentBuilder("DecreaseVolume").require("Volume") \
+                .require("Decrease").build()
         self.register_intent(intent, self.handle_decrease_volume)
 
-        intent = IntentBuilder("MuteVolume").require("Volume").require("Mute"
-                               ).build()
+        intent = IntentBuilder("MuteVolume").require("Volume") \
+                .require("Mute").build()
         self.register_intent(intent, self.handle_mute_volume)
 
-        intent = IntentBuilder("UnmuteVolume").require("Volume").require("Unmute"
-                               ).build()
+        intent = IntentBuilder("UnmuteVolume").require("Volume") \
+                .require("Unmute").build()
         self.register_intent(intent, self.handle_unmute_volume)
 
-        try:
-            # Register handlers for messagebus events
-            self.add_event('mycroft.volume.increase',
-                           self.handle_increase_volume)
-            self.add_event('mycroft.volume.decrease',
-                           self.handle_decrease_volume)
-            self.add_event('mycroft.volume.mute',
-                           self.handle_mute_volume)
-            self.add_event('mycroft.volume.unmute',
-                           self.handle_unmute_volume)
-            self.log.info("********** Handlers registered")
-        except:
-            pass
+        # Register handlers for messagebus events
+        self.add_event('mycroft.volume.increase',
+                       self.handle_increase_volume)
+        self.add_event('mycroft.volume.decrease',
+                       self.handle_decrease_volume)
+        self.add_event('mycroft.volume.mute',
+                       self.handle_mute_volume)
+        self.add_event('mycroft.volume.unmute',
+                       self.handle_unmute_volume)
 
     @intent_handler(IntentBuilder("SetVolume").require(
         "Volume").require("Level"))
@@ -159,12 +156,12 @@ class VolumeSkill(MycroftSkill):
 
     def __volume_to_level(self, volume):
         """
-        Convert a 'volume' to a 'level'
+            Convert a 'volume' to a 'level'
 
-        Args:
-            volume (int): min_volume..max_volume
-        Returns:
-            int: the equivalent level
+            Args:
+                volume (int): min_volume..max_volume
+            Returns:
+                int: the equivalent level
         """
         range = self.MAX_LEVEL - self.MIN_LEVEL
         prop = float(volume - self.min_volume) / self.max_volume
@@ -177,12 +174,12 @@ class VolumeSkill(MycroftSkill):
 
     def __level_to_volume(self, level):
         """
-        Convert a 'level' to a 'volume'
+            Convert a 'level' to a 'volume'
 
-        Args:
-            level (int): 0..MAX_LEVEL
-        Returns:
-            int: the equivalent volume
+            Args:
+                level (int): 0..MAX_LEVEL
+            Returns:
+                int: the equivalent volume
         """
         range = self.max_volume - self.min_volume
         prop = float(level) / self.MAX_LEVEL
@@ -200,14 +197,13 @@ class VolumeSkill(MycroftSkill):
 
     def __update_volume(self, change=0):
         """
-        Attempt to change audio level
+            Attempt to change audio level
 
-        Args:
-            change (int): +1 or -1; the step to change by
+            Args:
+                change (int): +1 or -1; the step to change by
 
-        Returns:
-            int: new level code (0..11)
-            bool: whether level changed
+            Returns: tuple(new level code int(0..11),
+                           whether level changed (bool))
         """
         old_level = self.__volume_to_level(self.mixer.getvolume()[0])
         new_level = self.__bound_level(old_level + change)
