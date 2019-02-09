@@ -104,7 +104,7 @@ class VolumeSkill(MycroftSkill):
     @intent_handler(IntentBuilder("QueryVolume").require(
         "Volume").require("Query"))
     def handle_query_volume(self, message):
-        level = self.__get_volume_level(message, self.mixer.getvolume()[0])
+        level = self.__volume_to_level(self.mixer.getvolume()[0])
         self.speak_dialog('volume.is', data={'volume': round(level)})
 
     def __communicate_volume_change(self, message, dialog, code, changed):
