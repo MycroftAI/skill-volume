@@ -16,7 +16,7 @@ button on a Mark 1.
 Mycroft AI (@MycroftAI)
 
 ## Category
-**Music**
+**Configuration**
 
 ## Tags
 #volume
