@@ -46,7 +46,10 @@ class VolumeSkill(MycroftSkill):
         super(VolumeSkill, self).__init__("VolumeSkill")
         self.settings["default_level"] = 6  # can be 0 (off) to 10 (max)
         self.settings["min_volume"] = 0     # can be 0 to 100
-        self.settings["max_volume"] = 100   # can be 0 to 100
+        if self.config_core['enclosure'].get('platform') == 'mycroft_mark_1':
+            self.settings["max_volume"] = 83   # can be 0 to 83
+        else:
+            self.settings["max_volume"] = 100   # can be 0 to 100
         self.volume_sound = join(dirname(__file__), "blop-mark-diangelo.wav")
         try:
             # If there are only 1 mixer use that one
