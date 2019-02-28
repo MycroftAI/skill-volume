@@ -44,9 +44,9 @@ class VolumeSkill(MycroftSkill):
 
     def __init__(self):
         super(VolumeSkill, self).__init__("VolumeSkill")
-        self.default_level = self.config.get('default_level')
-        self.min_volume = self.config.get('min_volume')
-        self.max_volume = self.config.get('max_volume')
+        self.settings["default_level"] = 6  # can be 0 (off) to 10 (max)
+        self.settings["min_volume"] = 0     # can be 0 to 100
+        self.settings["max_volume"] = 100   # can be 0 to 100
         self.volume_sound = join(dirname(__file__), "blop-mark-diangelo.wav")
         try:
             # If there are only 1 mixer use that one
@@ -132,11 +132,11 @@ class VolumeSkill(MycroftSkill):
     @intent_handler(IntentBuilder("UnmuteVolume").require(
         "Volume").require("Unmute"))
     def handle_unmute_volume(self, message):
-        self.mixer.setvolume(self.__level_to_volume(self.default_level))
+        self.mixer.setvolume(self.__level_to_volume(self.settings["default_level"]))
         speak_message = message.data.get('speak_message', True)
         if speak_message:
             self.speak_dialog('reset.volume',
-                              data={'volume': self.default_level})
+                              data={'volume': self.settings["default_level"]})
 
     def __volume_to_level(self, volume):
         """
@@ -148,7 +148,7 @@ class VolumeSkill(MycroftSkill):
                 int: the equivalent level
         """
         range = self.MAX_LEVEL - self.MIN_LEVEL
-        prop = float(volume - self.min_volume) / self.max_volume
+        prop = float(volume - self.settings["min_volume"]) / self.settings["max_volume"]
         level = int(round(self.MIN_LEVEL + range * prop))
         if level > self.MAX_LEVEL:
             level = self.MAX_LEVEL
@@ -165,9 +165,9 @@ class VolumeSkill(MycroftSkill):
             Returns:
                 int: the equivalent volume
         """
-        range = self.max_volume - self.min_volume
+        range = self.settings["max_volume"] - self.settings["min_volume"]
         prop = float(level) / self.MAX_LEVEL
-        volume = int(round(self.min_volume + int(range) * prop))
+        volume = int(round(self.settings["min_volume"] + int(range) * prop))
 
         return volume
 
@@ -197,7 +197,7 @@ class VolumeSkill(MycroftSkill):
 
     def __get_volume_level(self, message, default=None):
         level_str = message.data.get('Level', default)
-        level = self.default_level
+        level = self.settings["default_level"]
 
         try:
             level = self.VOLUME_WORDS[level_str]
