@@ -62,6 +62,8 @@ class VolumeSkill(MycroftSkill):
                 self.mixer = Mixer('PCM')
             elif 'Digital' in mixers:  # My mixer is called 'Digital' (JustBoom DAC)
                 self.mixer = Mixer('Digital')
+            else:
+                self.mixer = Mixer() #should be equivalent to 'Master'
         except Exception:
             # Retry instanciating the mixer with the built-in default
             try:
