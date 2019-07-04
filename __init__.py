@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import time
 from alsaaudio import Mixer, mixers as alsa_mixers
 from os.path import dirname, join
 
@@ -22,6 +21,9 @@ from mycroft.messagebus.message import Message
 from mycroft.skills.core import MycroftSkill, intent_handler
 from mycroft.util import play_wav
 from mycroft.util.parse import extract_number
+
+
+ALSA_PLATFORMS = ['mycroft_mark_1', 'picroft', 'unknown']
 
 
 class VolumeSkill(MycroftSkill):
@@ -52,6 +54,13 @@ class VolumeSkill(MycroftSkill):
         else:
             self.settings["max_volume"] = 100   # can be 0 to 100
         self.volume_sound = join(dirname(__file__), "blop-mark-diangelo.wav")
+
+        self.mixer = None
+        platform = self.config_core['enclosure'].get('platform', 'unkown')
+        if platform in ALSA_PLATFORMS:
+            self._get_mixer()
+
+    def _get_mixer(self):
         try:
             # If there are only 1 mixer use that one
             mixers = alsa_mixers()
@@ -68,7 +77,7 @@ class VolumeSkill(MycroftSkill):
 
     def initialize(self):
         # Register handlers to detect percentages as reported by STT
-        for i in range(101): # numbers 0 to 100
+        for i in range(101):  # numbers 0 to 100
             self.register_vocabulary(str(i) + '%', 'Percent')
 
         # Register handlers for messagebus events
@@ -83,7 +92,8 @@ class VolumeSkill(MycroftSkill):
 
     def _setvolume(self, vol, emit=True):
         # Update ALSA
-        self.mixer.setvolume(vol)
+        if self.mixer:
+            self.mixer.setvolume(vol)
         # TODO: Remove this and control volume at the Enclosure level in
         # response to the mycroft.volume.set message.
 
@@ -96,7 +106,9 @@ class VolumeSkill(MycroftSkill):
         "Volume").require("Level").optionally(
         "Increase").optionally("Decrease"))
     def handle_set_volume(self, message):
-        level = self.__get_volume_level(message, self.mixer.getvolume()[0])
+        default_vol = self.__get_system_volume(50)
+
+        level = self.__get_volume_level(message, default_vol)
         self._setvolume(self.__level_to_volume(level))
         self.speak_dialog('set.volume', data={'volume': level})
 
@@ -111,7 +123,7 @@ class VolumeSkill(MycroftSkill):
     @intent_handler(IntentBuilder("QueryVolume").require(
         "Volume").require("Query"))
     def handle_query_volume(self, message):
-        level = self.__volume_to_level(self.mixer.getvolume()[0])
+        level = self.__volume_to_level(self.__get_system_volume(0))
         self.speak_dialog('volume.is', data={'volume': round(level)})
 
     def __communicate_volume_change(self, message, dialog, code, changed):
@@ -134,7 +146,7 @@ class VolumeSkill(MycroftSkill):
         "Volume").require("Decrease"))
     def handle_decrease_volume(self, message):
         self.__communicate_volume_change(message, 'decrease.volume',
-                                        *self.__update_volume(-1))
+                                         *self.__update_volume(-1))
 
     @intent_handler(IntentBuilder("MuteVolume").require(
         "Volume").require("Mute"))
@@ -168,7 +180,9 @@ class VolumeSkill(MycroftSkill):
                 int: the equivalent level
         """
         range = self.MAX_LEVEL - self.MIN_LEVEL
-        prop = float(volume - self.settings["min_volume"]) / self.settings["max_volume"]
+        min_vol = self.settings["min_volume"]
+        max_vol = self.settings["max_volume"]
+        prop = float(volume - min_vol) / max_vol
         level = int(round(self.MIN_LEVEL + range * prop))
         if level > self.MAX_LEVEL:
             level = self.MAX_LEVEL
@@ -209,13 +223,29 @@ class VolumeSkill(MycroftSkill):
             Returns: tuple(new level code int(0..11),
                            whether level changed (bool))
         """
-        old_level = self.__volume_to_level(self.mixer.getvolume()[0])
+        old_level = self.__volume_to_level(self.__get_system_volume(0))
         new_level = self.__bound_level(old_level + change)
         self.enclosure.eyes_volume(new_level)
         self._setvolume(self.__level_to_volume(new_level))
         return new_level, new_level != old_level
 
+    def __get_system_volume(self, default=50):
+        """ Get volume, either from mixer or ask on messagebus.
+
+        TODO: Remove usage of Mixer and move that stuff to enclosure.
+        """
+        vol = default
+        if self.mixer:
+            vol = self.mixer.getvolume()[0]
+        else:
+            vol_msg = self.bus.wait_for_response(Message("mycroft.volume.get"))
+            if vol_msg:
+                vol = int(vol_msg.data["percent"] * 100)
+
+        return vol
+
     def __get_volume_level(self, message, default=None):
+        """ Retrievs volume from message. """
         level_str = message.data.get('Level', default)
         level = self.settings["default_level"]
 
