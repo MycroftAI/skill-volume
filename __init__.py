@@ -240,7 +240,7 @@ class VolumeSkill(MycroftSkill):
         else:
             vol_msg = self.bus.wait_for_response(Message("mycroft.volume.get"))
             if vol_msg:
-                vol = vol_msg.data["percent"]
+                vol = int(vol_msg.data["percent"] * 100)
 
         return vol
 
