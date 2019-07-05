@@ -56,11 +56,12 @@ class VolumeSkill(MycroftSkill):
         self.volume_sound = join(dirname(__file__), "blop-mark-diangelo.wav")
 
         self.mixer = None
-        platform = self.config_core['enclosure'].get('platform', 'unkown')
+        platform = self.config_core['enclosure'].get('platform', 'unknown')
         if platform in ALSA_PLATFORMS:
             self._get_mixer()
 
     def _get_mixer(self):
+        self.log.debug('Finding Alsa Mixer for control...')
         try:
             # If there are only 1 mixer use that one
             mixers = alsa_mixers()
