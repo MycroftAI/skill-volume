@@ -67,10 +67,16 @@ class VolumeSkill(MycroftSkill):
             mixers = alsa_mixers()
             if len(mixers) == 1:
                 self.mixer = Mixer(mixers[0])
-            else:  # Try using the default mixer
-                self.mixer = Mixer()
+            elif 'Master' in mixers:  # Try using the default mixer (Master)
+                self.mixer = Mixer('Master')
+            elif 'PCM' in mixers:  # PCM is another common one
+                self.mixer = Mixer('PCM')
+            elif 'Digital' in mixers:  # My mixer is called 'Digital' (JustBoom DAC)
+                self.mixer = Mixer('Digital')
+            else:
+                self.mixer = Mixer() #should be equivalent to 'Master'
         except Exception:
-            # Retry instanciating the mixer
+            # Retry instanciating the mixer with the built-in default
             try:
                 self.mixer = Mixer()
             except Exception as e:
