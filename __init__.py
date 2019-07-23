@@ -143,7 +143,6 @@ class VolumeSkill(MycroftSkill):
 
     def __communicate_volume_change(self, message, dialog, code, changed):
         play_sound = message.data.get('play_sound', False)
-        self.log.info("__communicate_volume_change: Volume Level to " + str(code))
         if play_sound:
             if changed:
                 play_wav(self.volume_sound)
