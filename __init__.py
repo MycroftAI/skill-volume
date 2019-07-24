@@ -98,6 +98,8 @@ class VolumeSkill(MycroftSkill):
                        self.handle_unmute_volume)
 
     def _setvolume(self, vol, emit=True):
+        # reload mixer
+        self._get_mixer()
         # Update ALSA
         if self.mixer:
             self.mixer.setvolume(vol)
