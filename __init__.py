@@ -161,6 +161,11 @@ class VolumeSkill(MycroftSkill):
         self.__communicate_volume_change(message, 'increase.volume',
                                          *self.__update_volume(+1))
 
+    @intent_handler(IntentBuilder("IncreaseVolumeVerb").require(
+        "Verb").optionally("Volume").require("Increase"))
+    def handle_increase_volume_verb(self, message):
+        self.handle_increase_volume(message)
+    
     @intent_handler(IntentBuilder("IncreaseVolumePhrase").require(
         "IncreasePhrase"))
     def handle_increase_volume_phrase(self, message):
@@ -172,6 +177,11 @@ class VolumeSkill(MycroftSkill):
     def handle_decrease_volume(self, message):
         self.__communicate_volume_change(message, 'decrease.volume',
                                          *self.__update_volume(-1))
+
+    @intent_handler(IntentBuilder("DecreaseVolumeVerb").require(
+        "Verb").optionally("Volume").require("Decrease"))
+    def handle_decrease_volume_verb(self, message):
+        self.handle_decrease_volume(message)
     
     @intent_handler(IntentBuilder("DecreaseVolumePhrase").require(
         "DecreasePhrase"))
