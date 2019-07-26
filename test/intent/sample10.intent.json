@@ -1,8 +1,8 @@
 {
   "utterance": "reset volume",
-  "intent_type": "UnmuteVolume",
+  "intent_type": "ResetVolume",
   "intent": {
     "Volume": "volume",
-    "Unmute": "reset"
+    "Reset": "reset"
   }
 }
