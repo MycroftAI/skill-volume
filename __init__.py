@@ -147,12 +147,8 @@ class VolumeSkill(MycroftSkill):
             if changed:
                 play_wav(self.volume_sound)
         else:
-            if not changed:
-                if code == 0:
-                    dialog = 'already.min.volume'
-                else:
-                    dialog = 'already.max.volume'
-            self.speak_dialog(dialog, data={'volume': code})
+            if (not changed) and (code != 0):
+                self.speak_dialog('already.max.volume', data={'volume': code})
 
     # Increase Volume Intent Handlers
     @intent_handler(IntentBuilder("IncreaseVolume").require(
@@ -161,9 +157,9 @@ class VolumeSkill(MycroftSkill):
         self.__communicate_volume_change(message, 'increase.volume',
                                          *self.__update_volume(+1))
 
-    @intent_handler(IntentBuilder("IncreaseVolumeVerb").require(
-        "Verb").optionally("Volume").require("Increase"))
-    def handle_increase_volume_verb(self, message):
+    @intent_handler(IntentBuilder("IncreaseVolumeSet").require(
+        "Set").optionally("Volume").require("Increase"))
+    def handle_increase_volume_set(self, message):
         self.handle_increase_volume(message)
     
     @intent_handler(IntentBuilder("IncreaseVolumePhrase").require(
@@ -178,9 +174,9 @@ class VolumeSkill(MycroftSkill):
         self.__communicate_volume_change(message, 'decrease.volume',
                                          *self.__update_volume(-1))
 
-    @intent_handler(IntentBuilder("DecreaseVolumeVerb").require(
-        "Verb").optionally("Volume").require("Decrease"))
-    def handle_decrease_volume_verb(self, message):
+    @intent_handler(IntentBuilder("DecreaseVolumeSet").require(
+        "Set").optionally("Volume").require("Decrease"))
+    def handle_decrease_volume_set(self, message):
         self.handle_decrease_volume(message)
     
     @intent_handler(IntentBuilder("DecreaseVolumePhrase").require(
@@ -202,11 +198,6 @@ class VolumeSkill(MycroftSkill):
     @intent_handler(IntentBuilder("MaxVolumeIncreaseMax").require(
         "Increase").require("Volume").require("MaxVolume"))
     def handle_max_volume_increase_to_max(self, message):
-        self.handle_max_volume(message)
-
-    @intent_handler(IntentBuilder("MaxVolumePhrase").require(
-        "IncreasePhrase").require("MaxVolume"))
-    def handle_max_volume_phrase(self, message):
         self.handle_max_volume(message)
 
     # Mute Volume Intent Handlers
