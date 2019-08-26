@@ -54,37 +54,35 @@ class VolumeSkill(MycroftSkill):
         else:
             self.settings["max_volume"] = 100   # can be 0 to 100
         self.volume_sound = join(dirname(__file__), "blop-mark-diangelo.wav")
-
-        self.mixer = None
-        platform = self.config_core['enclosure'].get('platform', 'unknown')
-        if platform in ALSA_PLATFORMS:
-            self._get_mixer()
+        self.vol_before_mute = None
 
     def _get_mixer(self):
         self.log.debug('Finding Alsa Mixer for control...')
+        mixer = None
         try:
             # If there are only 1 mixer use that one
             mixers = alsa_mixers()
             if len(mixers) == 1:
-                self.mixer = Mixer(mixers[0])
-            elif 'Master' in mixers: 
+                mixer = Mixer(mixers[0])
+            elif 'Master' in mixers:
                 # Try using the default mixer (Master)
-                self.mixer = Mixer('Master')
-            elif 'PCM' in mixers: 
+                mixer = Mixer('Master')
+            elif 'PCM' in mixers:
                 # PCM is another common one
-                self.mixer = Mixer('PCM')
-            elif 'Digital' in mixers: 
+                mixer = Mixer('PCM')
+            elif 'Digital' in mixers:
                 # My mixer is called 'Digital' (JustBoom DAC)
-                self.mixer = Mixer('Digital')
+                mixer = Mixer('Digital')
             else:
                 # should be equivalent to 'Master'
-                self.mixer = Mixer()
+                mixer = Mixer()
         except Exception:
             # Retry instanciating the mixer with the built-in default
             try:
-                self.mixer = Mixer()
+                mixer = Mixer()
             except Exception as e:
                 self.log.error('Couldn\'t allocate mixer, {}'.format(repr(e)))
+        return mixer
 
     def initialize(self):
         # Register handlers to detect percentages as reported by STT
@@ -100,12 +98,25 @@ class VolumeSkill(MycroftSkill):
                        self.handle_mute_volume)
         self.add_event('mycroft.volume.unmute',
                        self.handle_unmute_volume)
+        self.add_event('recognizer_loop:record_begin',
+                       self._mute_volume)
+        self.add_event('recognizer_loop:record_end',
+                       self._unmute_volume)
+
+        self.vol_before_mute = self.__get_system_volume()
+
+    @property
+    def mixer(self):
+        platform = self.config_core['enclosure'].get('platform', 'unknown')
+        if platform in ALSA_PLATFORMS:
+            return self._get_mixer()
+        else:
+            return None
 
     def _setvolume(self, vol, emit=True):
-        # reload mixer
-        self._get_mixer()
         # Update ALSA
         if self.mixer:
+            print(vol)
             self.mixer.setvolume(vol)
         # TODO: Remove this and control volume at the Enclosure level in
         # response to the mycroft.volume.set message.
@@ -114,7 +125,7 @@ class VolumeSkill(MycroftSkill):
             # Notify non-ALSA systems of volume change
             self.bus.emit(Message('mycroft.volume.set',
                                   data={"percent": vol/100.0}))
- 
+
     # Change Volume to X (Number 0 to) Intent Handlers
     @intent_handler(IntentBuilder("SetVolume").require("Volume")
                     .optionally("Increase").optionally("Decrease")
@@ -142,7 +153,7 @@ class VolumeSkill(MycroftSkill):
     def handle_query_volume(self, message):
         level = self.__volume_to_level(self.__get_system_volume(0, show=True))
         self.speak_dialog('volume.is', data={'volume': round(level)})
-    
+
     @intent_handler(IntentBuilder("QueryVolumePhrase").require("QueryPhrase")
                     .optionally("Volume"))
     def handle_query_volume_phrase(self, message):
@@ -168,7 +179,7 @@ class VolumeSkill(MycroftSkill):
                     .optionally("Volume").require("Increase"))
     def handle_increase_volume_set(self, message):
         self.handle_increase_volume(message)
-    
+
     @intent_handler(IntentBuilder("IncreaseVolumePhrase")
                     .require("IncreasePhrase"))
     def handle_increase_volume_phrase(self, message):
@@ -185,7 +196,7 @@ class VolumeSkill(MycroftSkill):
                     .optionally("Volume").require("Decrease"))
     def handle_decrease_volume_set(self, message):
         self.handle_decrease_volume(message)
-    
+
     @intent_handler(IntentBuilder("DecreaseVolumePhrase")
                     .require("DecreasePhrase"))
     def handle_decrease_volume_phrase(self, message):
@@ -194,7 +205,7 @@ class VolumeSkill(MycroftSkill):
     # Maximum Volume Intent Handlers
     @intent_handler(IntentBuilder("MaxVolume").optionally("Set")
                     .require("Volume").optionally("Increase")
-                    .require("MaxVolume"))   
+                    .require("MaxVolume"))
     def handle_max_volume(self, message):
         speak_message = message.data.get('speak_message', True)
         if speak_message:
@@ -209,31 +220,40 @@ class VolumeSkill(MycroftSkill):
     def handle_max_volume_increase_to_max(self, message):
         self.handle_max_volume(message)
 
-    # Mute Volume Intent Handlers
-    @intent_handler(IntentBuilder("MuteVolume").require(
-        "Volume").require("Mute"))
-    def handle_mute_volume(self, message):
-        speak_message = message.data.get('speak_message', True)
-        if speak_message:
+    def _mute_volume(self, message=None, speak=False):
+        self.log.info('MUTING!')
+        self.vol_before_mute = self.__get_system_volume()
+        self.log.info(self.vol_before_mute)
+        if speak:
             self.speak_dialog('mute.volume')
             wait_while_speaking()
         self._setvolume(0, emit=False)
         self.bus.emit(Message('mycroft.volume.duck'))
 
+    # Mute Volume Intent Handlers
+    @intent_handler(IntentBuilder("MuteVolume").require(
+        "Volume").require("Mute"))
+    def handle_mute_volume(self, message):
+        self._mute_volume(speak=message.data.get('speak_message', True))
+
+    def _unmute_volume(self, message=None, speak=False):
+        vol = (self.vol_before_mute or
+               self.__level_to_volume(self.settings["default_level"]))
+        self.vol_before_mute = None
+
+        self._setvolume(vol, emit=False)
+        self.bus.emit(Message('mycroft.volume.unduck'))
+
+        if speak:
+            self.speak_dialog('reset.volume',
+                              data={'volume':
+                                    self.settings["default_level"]})
+
     # Unmute/Reset Volume Intent Handlers
     @intent_handler(IntentBuilder("UnmuteVolume").require("Volume")
                     .require("Unmute"))
     def handle_unmute_volume(self, message):
-        self._setvolume(self.__level_to_volume(
-                                self.settings["default_level"]),
-                        emit=False)
-        self.bus.emit(Message('mycroft.volume.unduck'))
-
-        speak_message = message.data.get('speak_message', True)
-        if speak_message:
-            self.speak_dialog('reset.volume',
-                              data={'volume':
-                                    self.settings["default_level"]})
+        self._unmute_volume(speak=message.data.get('speak_message', True))
 
     @intent_handler(IntentBuilder("ResetVolume").require("Reset")
                     .require("Volume"))
@@ -308,7 +328,8 @@ class VolumeSkill(MycroftSkill):
         """
         vol = default
         if self.mixer:
-            vol = self.mixer.getvolume()[0]
+            vol = min(self.mixer.getvolume()[0], 100)
+            self.log.info('Volume before mute: {}'.format(vol))
         else:
             vol_msg = self.bus.wait_for_response(
                                 Message("mycroft.volume.get", {'show': show}))
@@ -336,6 +357,10 @@ class VolumeSkill(MycroftSkill):
 
         level = self.__bound_level(level)
         return level
+
+    def shutdown(self):
+        if self.vol_before_mute is not None:
+            self._unmute_volume()
 
 
 def create_skill():
