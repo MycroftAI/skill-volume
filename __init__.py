@@ -140,7 +140,7 @@ class VolumeSkill(MycroftSkill):
     @intent_handler(IntentBuilder("QueryVolume").optionally("Query")
                     .require("Volume"))
     def handle_query_volume(self, message):
-        level = self.__volume_to_level(self.__get_system_volume(0))
+        level = self.__volume_to_level(self.__get_system_volume(0, show=True))
         self.speak_dialog('volume.is', data={'volume': round(level)})
     
     @intent_handler(IntentBuilder("QueryVolumePhrase").require("QueryPhrase")
@@ -299,9 +299,11 @@ class VolumeSkill(MycroftSkill):
         self._setvolume(self.__level_to_volume(new_level))
         return new_level, new_level != old_level
 
-    def __get_system_volume(self, default=50):
+    def __get_system_volume(self, default=50, show=False):
         """ Get volume, either from mixer or ask on messagebus.
 
+        The show parameter should only be True when a user is requesting
+        the volume and not the system.
         TODO: Remove usage of Mixer and move that stuff to enclosure.
         """
         vol = default
@@ -309,7 +311,7 @@ class VolumeSkill(MycroftSkill):
             vol = self.mixer.getvolume()[0]
         else:
             vol_msg = self.bus.wait_for_response(
-                                Message("mycroft.volume.get"))
+                                Message("mycroft.volume.get", {'show': show}))
             if vol_msg:
                 vol = int(vol_msg.data["percent"] * 100)
 
