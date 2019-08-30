@@ -263,11 +263,6 @@ class VolumeSkill(MycroftSkill):
     def handle_unmute_volume(self, message):
         self._unmute_volume(speak=message.data.get('speak_message', True))
 
-    @intent_handler(IntentBuilder("ResetVolume").require("Reset")
-                    .require("Volume"))
-    def handle_reset_volume(self, message):
-        self.handle_unmute_volume(message)
-
     def __volume_to_level(self, volume):
         """
             Convert a 'volume' to a 'level'
