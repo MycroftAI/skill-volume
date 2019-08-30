@@ -99,9 +99,9 @@ class VolumeSkill(MycroftSkill):
         self.add_event('mycroft.volume.unmute',
                        self.handle_unmute_volume)
         self.add_event('recognizer_loop:record_begin',
-                       self._mute_volume)
+                       self.duck)
         self.add_event('recognizer_loop:record_end',
-                       self._unmute_volume)
+                       self.unduck)
 
         self.vol_before_mute = self.__get_system_volume()
 
@@ -219,6 +219,14 @@ class VolumeSkill(MycroftSkill):
                     .require("Increase").optionally("MaxVolume"))
     def handle_max_volume_increase_to_max(self, message):
         self.handle_max_volume(message)
+
+    def duck(self, message):
+        if self.settings.get('ducking', True):
+            self._mute_volume()
+
+    def unduck(self, message):
+        if self.settings.get('ducking', True):
+            self._unmute_volume()
 
     def _mute_volume(self, message=None, speak=False):
         self.log.info('MUTING!')
