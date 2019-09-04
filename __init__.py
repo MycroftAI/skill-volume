@@ -207,11 +207,11 @@ class VolumeSkill(MycroftSkill):
                     .require("Volume").optionally("Increase")
                     .require("MaxVolume"))
     def handle_max_volume(self, message):
+        self._setvolume(self.settings["max_volume"])
         speak_message = message.data.get('speak_message', True)
         if speak_message:
             self.speak_dialog('max.volume')
             wait_while_speaking()
-        self._setvolume(self.settings["max_volume"], emit=False)
         self.bus.emit(Message('mycroft.volume.duck'))
 
     @intent_handler(IntentBuilder("MaxVolumeIncreaseMax")
