@@ -1,4 +1,4 @@
-name: Home Assistant
+name: Volume
 skillMetadata:
   sections:
   - name: Ducking
@@ -6,4 +6,4 @@ skillMetadata:
     - name: ducking
       type: checkbox
       label: Duck while listening
-      value: True
+      value: "true"
