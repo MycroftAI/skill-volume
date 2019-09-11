@@ -58,7 +58,13 @@ class VolumeSkill(MycroftSkill):
         self._mixer = None
 
     def _clear_mixer(self):
-        self._mixer = None
+        """For Unknown platforms reinstantiate the mixer.
+
+        For mycroft_mark_1 do not reinstantiate the mixer.
+        """
+        platform = self.config_core['enclosure'].get('platform', 'unknown')
+        if platform != 'mycroft_mark_1':
+            self._mixer = None
 
     def _get_mixer(self):
         self.log.debug('Finding Alsa Mixer for control...')
