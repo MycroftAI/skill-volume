@@ -265,8 +265,10 @@ class VolumeSkill(MycroftSkill):
         self._mute_volume(speak=message.data.get('speak_message', True))
 
     def _unmute_volume(self, message=None, speak=False):
-        vol = (self.vol_before_mute or
-               self.__level_to_volume(self.settings["default_level"]))
+        if self.vol_before_mute is None:
+            vol = self.__level_to_volume(self.settings["default_level"])
+        else:
+            vol = self.vol_before_mute
         self.vol_before_mute = None
 
         self._setvolume(vol, emit=False)
