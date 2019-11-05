@@ -127,7 +127,7 @@ class VolumeSkill(MycroftSkill):
     def _setvolume(self, vol, emit=True):
         # Update ALSA
         if self.mixer:
-            print(vol)
+            self.log.debug(vol)
             self.mixer.setvolume(vol)
         # TODO: Remove this and control volume at the Enclosure level in
         # response to the mycroft.volume.set message.
@@ -251,9 +251,9 @@ class VolumeSkill(MycroftSkill):
             self._unmute_volume()
 
     def _mute_volume(self, message=None, speak=False):
-        self.log.info('MUTING!')
+        self.log.debug('MUTING!')
         self.vol_before_mute = self.__get_system_volume()
-        self.log.info(self.vol_before_mute)
+        self.log.debug(self.vol_before_mute)
         if speak:
             self.speak_dialog('mute.volume')
             wait_while_speaking()
@@ -358,7 +358,7 @@ class VolumeSkill(MycroftSkill):
         vol = default
         if self.mixer:
             vol = min(self.mixer.getvolume()[0], 100)
-            self.log.info('Volume before mute: {}'.format(vol))
+            self.log.debug('Volume before mute: {}'.format(vol))
         else:
             vol_msg = self.bus.wait_for_response(
                                 Message("mycroft.volume.get", {'show': show}))
