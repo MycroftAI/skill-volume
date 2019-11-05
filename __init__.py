@@ -31,12 +31,12 @@ class VolumeSkill(MycroftSkill):
     Control the audio volume for the Mycroft system
 
     Terminology:
-       "Level" =  Mycroft volume levels, from 0 to 11
+       "Level" =  Mycroft volume levels, from 0 to 10
        "Volume" = ALSA mixer setting, from 0 to 100
     """
 
     MIN_LEVEL = 0
-    MAX_LEVEL = 11
+    MAX_LEVEL = 10
 
     # TODO: Translation layer (have to match word in Level.voc)
     VOLUME_WORDS = {
@@ -147,7 +147,10 @@ class VolumeSkill(MycroftSkill):
 
         level = self.__get_volume_level(message, default_vol)
         self._setvolume(self.__level_to_volume(level))
-        self.speak_dialog('set.volume', data={'volume': level})
+        if level == self.MAX_LEVEL:
+            self.speak_dialog('max.volume')
+        else:
+            self.speak_dialog('set.volume', data={'volume': level})
 
     # Set Volume Percent Intent Handlers
     @intent_handler(IntentBuilder("SetVolumePercent").require("Volume")
@@ -336,7 +339,7 @@ class VolumeSkill(MycroftSkill):
             Args:
                 change (int): +1 or -1; the step to change by
 
-            Returns: tuple(new level code int(0..11),
+            Returns: tuple(new level code int(0..10),
                            whether level changed (bool))
         """
         old_level = self.__volume_to_level(self.__get_system_volume(0))
@@ -374,7 +377,10 @@ class VolumeSkill(MycroftSkill):
         except KeyError:
             try:
                 level = int(level_str)
-                if (level > self.MAX_LEVEL):
+                if (level == self.MAX_LEVEL + 1):
+                    # Assume that user meant max volume
+                    level = self.MAX_LEVEL
+                elif (level > self.MAX_LEVEL):
                     # Guess that the user said something like 100 percent
                     # so convert that into a level value
                     level = self.MAX_LEVEL * level/100
