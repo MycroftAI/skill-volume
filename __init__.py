@@ -31,12 +31,12 @@ class VolumeSkill(MycroftSkill):
     Control the audio volume for the Mycroft system
 
     Terminology:
-       "Level" =  Mycroft volume levels, from 0 to 11
+       "Level" =  Mycroft volume levels, from 0 to 10
        "Volume" = ALSA mixer setting, from 0 to 100
     """
 
     MIN_LEVEL = 0
-    MAX_LEVEL = 11
+    MAX_LEVEL = 10
 
     # TODO: Translation layer (have to match word in Level.voc)
     VOLUME_WORDS = {
@@ -127,7 +127,7 @@ class VolumeSkill(MycroftSkill):
     def _setvolume(self, vol, emit=True):
         # Update ALSA
         if self.mixer:
-            print(vol)
+            self.log.debug(vol)
             self.mixer.setvolume(vol)
         # TODO: Remove this and control volume at the Enclosure level in
         # response to the mycroft.volume.set message.
@@ -147,7 +147,10 @@ class VolumeSkill(MycroftSkill):
 
         level = self.__get_volume_level(message, default_vol)
         self._setvolume(self.__level_to_volume(level))
-        self.speak_dialog('set.volume', data={'volume': level})
+        if level == self.MAX_LEVEL:
+            self.speak_dialog('max.volume')
+        else:
+            self.speak_dialog('set.volume', data={'volume': level})
 
     # Set Volume Percent Intent Handlers
     @intent_handler(IntentBuilder("SetVolumePercent").require("Volume")
@@ -248,9 +251,9 @@ class VolumeSkill(MycroftSkill):
             self._unmute_volume()
 
     def _mute_volume(self, message=None, speak=False):
-        self.log.info('MUTING!')
+        self.log.debug('MUTING!')
         self.vol_before_mute = self.__get_system_volume()
-        self.log.info(self.vol_before_mute)
+        self.log.debug(self.vol_before_mute)
         if speak:
             self.speak_dialog('mute.volume')
             wait_while_speaking()
@@ -336,7 +339,7 @@ class VolumeSkill(MycroftSkill):
             Args:
                 change (int): +1 or -1; the step to change by
 
-            Returns: tuple(new level code int(0..11),
+            Returns: tuple(new level code int(0..10),
                            whether level changed (bool))
         """
         old_level = self.__volume_to_level(self.__get_system_volume(0))
@@ -355,7 +358,7 @@ class VolumeSkill(MycroftSkill):
         vol = default
         if self.mixer:
             vol = min(self.mixer.getvolume()[0], 100)
-            self.log.info('Volume before mute: {}'.format(vol))
+            self.log.debug('Volume before mute: {}'.format(vol))
         else:
             vol_msg = self.bus.wait_for_response(
                                 Message("mycroft.volume.get", {'show': show}))
@@ -374,7 +377,10 @@ class VolumeSkill(MycroftSkill):
         except KeyError:
             try:
                 level = int(level_str)
-                if (level > self.MAX_LEVEL):
+                if (level == self.MAX_LEVEL + 1):
+                    # Assume that user meant max volume
+                    level = self.MAX_LEVEL
+                elif (level > self.MAX_LEVEL):
                     # Guess that the user said something like 100 percent
                     # so convert that into a level value
                     level = self.MAX_LEVEL * level/100
