@@ -376,7 +376,7 @@ class VolumeSkill(MycroftSkill):
             level = self.VOLUME_WORDS[level_str]
         except KeyError:
             try:
-                level = int(level_str)
+                level = int(extract_number(level_str))
                 if (level == self.MAX_LEVEL + 1):
                     # Assume that user meant max volume
                     level = self.MAX_LEVEL
