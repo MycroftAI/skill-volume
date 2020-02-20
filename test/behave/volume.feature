@@ -5,7 +5,8 @@ Feature: volume control
      When the user says "<volume up>"
      Then "mycroft-volume" should reply with dialog from "increase.volume.dialog"
 
-  Examples:
+  Examples: turning up the volume
+    | volume up |
     | increase volume |
     | volume up |
     | turn it up |
@@ -25,7 +26,8 @@ Feature: volume control
      When the user says "<volume down>"
      Then "mycroft-volume" should reply with dialog from "decrease.volume.dialog"
 
-  Examples:
+  Examples: turning down the volume
+    | volume down |
     | decrease volume |
     | volume down |
     | turn it down |
@@ -45,7 +47,8 @@ Feature: volume control
      When the user says "<change volume to x>"
      Then "mycroft-volume" should reply with dialog from "set.volume.dialog"
 
-  Examples:
+  Examples: change volume to x
+    | change volume to x |
     | change volume to 8 |
     | set volume to 9 |
     | set audio to 6 |
@@ -56,12 +59,13 @@ Feature: volume control
     | volume 8 |
     | volume 80 percent |
 
-  Scenario Outline: change volume to x
+  Scenario Outline: max volume
     Given an enlish speaking user
-     When the user says "<change volume to x>"
+     When the user says "<max volume>"
      Then "mycroft-volume" should reply with dialog from "max.volume.dialog"
 
-  Examples:
+  Examples: max volume
+    | max volume |
     | max volume |
     | maximum volume |
     | loudest volume |
@@ -74,3 +78,75 @@ Feature: volume control
     | highest volume |
     | raise volume to max |
     | raise volume all the way |
+
+  Scenario Outline: volume status
+    Given an english speaking user
+     When the user says "<volume status>"
+     Then "mycroft-volume" should reply with dialog from "volume.is.dialog"
+
+  Examples: volume status
+    | volume status |
+    | what's your volume |
+    | what's your current volume level |
+    | what’s your sound level |
+    | what's your audio level |
+    | volume level |
+    | volume status |
+    | what volume are you set to |
+    | how loud is it |
+    | how loud is the volume |
+    | how loud is that |
+    | how high is the volume |
+    | how high is the sound |
+    | how high is the audio |
+    | how high is the sound level |
+    | how high is the audio level |
+    | how high is the volume level |
+    | what's the volume at |
+    | what's the current volume |
+    | what's the volume set to |
+    | what is the volume at |
+    | what level is the volume set to |
+    | what level is the volume at |
+
+  Scenario Outline: reset volume
+    Given an enlish speaking user
+     When the user says "<reset volume>"
+     Then "mycroft-volume" should reply with dialog from "reset.volume.dialog"
+
+  Examples: reset volume
+    | reset volume |
+    | default volume |
+    | go to default volume |
+    | restore volume |
+    | change volume to default volume |
+    | set volume to default volume |
+
+  Scenario Outline: mute audio
+    Given an english speaking user
+     When the user says "<mute audio>"
+     Then "mycroft-volume" should reply with dialog from "mute.volume.dialog"
+
+  Examples: mute audio
+    | mute audio |
+    | mute volume |
+    | mute all audio |
+    | mute the sound |
+    | silence the audio |
+    | be quiet |
+
+  Scenario Outline: unmute audio
+    Given an english speaking user
+     When the user says "<unmute audio>"
+     And Mycroft audio is muted
+     Then "mycroft-volume" should reply with dialog from "reset.volume.dialog"
+
+  Examples: unmute audio
+    | unmute audio |
+    | unmute |
+    | turn sound back on |
+    | turn on sound |
+    | turn muting off |
+    | turn mute off |
+    | unmute all sound |
+    | unmute the volume |
