@@ -8,6 +8,7 @@ Feature: volume control
 
   Examples: turning up the volume
     | volume up |
+    | volume up |
     | increase volume |
     | volume up |
     | turn it up |
@@ -30,6 +31,7 @@ Feature: volume control
 
   Examples: turning down the volume
     | volume down |
+    | volume down |
     | decrease volume |
     | volume down |
     | turn it down |
@@ -51,7 +53,8 @@ Feature: volume control
      Then "mycroft-volume" should reply with dialog from "set.volume.dialog"
 
   Examples: change volume to x
-    | change volume to 5 |
+    | change volume to 7 |
+    | change volume to 7 |
     | change volume to 8 |
     | set volume to 9 |
     | set audio to 6 |
@@ -91,6 +94,7 @@ Feature: volume control
 
   Examples: volume status
     | volume status |
+    | volume status |
     | what's your volume |
     | what's your current volume level |
     | what’s your sound level |
@@ -122,6 +126,7 @@ Feature: volume control
 
   Examples: reset volume
     | reset volume |
+    | reset volume |
     | default volume |
     | go to default volume |
     | restore volume |
@@ -149,6 +154,7 @@ Feature: volume control
      Then "mycroft-volume" should reply with dialog from "reset.volume.dialog"
 
   Examples: unmute audio
+    | unmute audio |
     | unmute audio |
     | unmute |
     | turn sound back on |
