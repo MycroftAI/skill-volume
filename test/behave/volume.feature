@@ -2,6 +2,7 @@ Feature: volume control
 
   Scenario Outline: turning up the volume
     Given an english speaking user
+     And the volume is set to 5
      When the user says "<volume up>"
      Then "mycroft-volume" should reply with dialog from "increase.volume.dialog"
 
@@ -23,6 +24,7 @@ Feature: volume control
 
   Scenario Outline: turning down the volume
     Given an english speaking user
+     And the volume is set to 5
      When the user says "<volume down>"
      Then "mycroft-volume" should reply with dialog from "decrease.volume.dialog"
 
@@ -44,11 +46,12 @@ Feature: volume control
 
   Scenario Outline: change volume to x
     Given an enlish speaking user
-     When the user says "<change volume to x>"
+     And the volume is set to 5
+     When the user says "<change volume to 7>"
      Then "mycroft-volume" should reply with dialog from "set.volume.dialog"
 
   Examples: change volume to x
-    | change volume to x |
+    | change volume to 5 |
     | change volume to 8 |
     | set volume to 9 |
     | set audio to 6 |
@@ -61,6 +64,7 @@ Feature: volume control
 
   Scenario Outline: max volume
     Given an enlish speaking user
+     And the volume is set to 5
      When the user says "<max volume>"
      Then "mycroft-volume" should reply with dialog from "max.volume.dialog"
 
@@ -81,6 +85,7 @@ Feature: volume control
 
   Scenario Outline: volume status
     Given an english speaking user
+     And the volume is set to 5
      When the user says "<volume status>"
      Then "mycroft-volume" should reply with dialog from "volume.is.dialog"
 
@@ -111,6 +116,7 @@ Feature: volume control
 
   Scenario Outline: reset volume
     Given an enlish speaking user
+     And the volume is set to 10
      When the user says "<reset volume>"
      Then "mycroft-volume" should reply with dialog from "reset.volume.dialog"
 
@@ -124,6 +130,7 @@ Feature: volume control
 
   Scenario Outline: mute audio
     Given an english speaking user
+     And the volume is set to 5
      When the user says "<mute audio>"
      Then "mycroft-volume" should reply with dialog from "mute.volume.dialog"
 
@@ -137,8 +144,8 @@ Feature: volume control
 
   Scenario Outline: unmute audio
     Given an english speaking user
-     When the user says "<unmute audio>"
      And Mycroft audio is muted
+     When the user says "<unmute audio>"
      Then "mycroft-volume" should reply with dialog from "reset.volume.dialog"
 
   Examples: unmute audio
