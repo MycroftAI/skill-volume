@@ -46,14 +46,14 @@ Feature: volume control
     | make it lower |
     | make it softer |
 
-  Scenario Outline: change volume to x
+  Scenario Outline: change volume to a number between 1 and 10
     Given an english speaking user
      And the volume is set to 5
-     When the user says "<change volume to 7>"
+     When the user says "<change volume to a number>"
      Then "mycroft-volume" should reply with dialog from "set.volume.dialog"
 
-  Examples: change volume to x
-    | change volume to 7 |
+  Examples: change volume to a number between 0 and 10
+    | change volume to a number |
     | change volume to 7 |
     | change volume to 8 |
     | set volume to 9 |
@@ -63,14 +63,14 @@ Feature: volume control
     | lower volume to 4 |
     | volume 8 |
 
-  Scenario Outline: change volume to x percent
+  Scenario Outline: change volume to a percent of 100
     Given an english speaking user
      And the volume is set to 5
-     When the user says "<change volume to 80 percent>"
+     When the user says "<change volume to a percent>"
      Then "mycroft-volume" should reply with dialog from "set.volume.percent.dialog"
 
-  Examples: change volume to 
-    | change volume to 80 percent |
+  Examples: change volume to a percent
+    | change volume to a percent |
     | volume 80 percent |
 
   Scenario Outline: max volume
@@ -149,6 +149,7 @@ Feature: volume control
      Then "mycroft-volume" should reply with dialog from "mute.volume.dialog"
 
   Examples: mute audio
+    | mute audio |
     | mute audio |
     | mute volume |
     | mute all audio |
