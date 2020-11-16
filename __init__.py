@@ -47,7 +47,6 @@ class VolumeSkill(MycroftSkill):
 
     def __init__(self):
         super(VolumeSkill, self).__init__("VolumeSkill")
-        self.settings["default_level"] = 6  # can be 0 (off) to 10 (max)
         self.settings["min_volume"] = 0     # can be 0 to 100
         if self.config_core['enclosure'].get('platform') == 'mycroft_mark_1':
             self.settings["max_volume"] = 83   # can be 0 to 83
@@ -114,7 +113,9 @@ class VolumeSkill(MycroftSkill):
         self.add_event('recognizer_loop:record_end',
                        self.unduck)
 
-        self.vol_before_mute = self.__get_system_volume()
+        default_volume = self.settings.get('default_volume', 50)
+        self._setvolume(default_volume)
+        self.vol_before_mute = default_volume
 
     @property
     def mixer(self):
@@ -269,7 +270,7 @@ class VolumeSkill(MycroftSkill):
 
     def _unmute_volume(self, message=None, speak=False):
         if self.vol_before_mute is None:
-            vol = self.__level_to_volume(self.settings["default_level"])
+            vol = self.settings["default_volume"]
         else:
             vol = self.vol_before_mute
         self.vol_before_mute = None
@@ -278,9 +279,10 @@ class VolumeSkill(MycroftSkill):
         self.bus.emit(Message('mycroft.volume.unduck'))
 
         if speak:
-            self.speak_dialog('reset.volume',
-                              data={'volume':
-                                    self.settings["default_level"]})
+            self.speak_dialog(
+                'reset.volume',
+                data={'volume':self.__volume_to_level(
+                    self.settings["default_volume"])})
 
     # Unmute/Reset Volume Intent Handlers
     @intent_handler(IntentBuilder("UnmuteVolume").require("Volume")
@@ -370,7 +372,7 @@ class VolumeSkill(MycroftSkill):
     def __get_volume_level(self, message, default=None):
         """ Retrievs volume from message. """
         level_str = message.data.get('Level', default)
-        level = self.settings["default_level"]
+        level = self.__volume_to_level(self.settings["default_volume"])
 
         try:
             level = self.VOLUME_WORDS[level_str]

@@ -6,3 +6,9 @@ skillMetadata:
       type: checkbox
       label: Duck while listening
       value: "true"
+  - name: Defaults
+    fields:
+      - name: default_volume
+        type: number
+        label: Default volume percent
+        value: "50"
