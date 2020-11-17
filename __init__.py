@@ -281,7 +281,7 @@ class VolumeSkill(MycroftSkill):
         if speak:
             self.speak_dialog(
                 'reset.volume',
-                data={'volume':self.__volume_to_level(
+                data={'volume': self.__volume_to_level(
                     self.settings["default_volume"])})
 
     # Unmute/Reset Volume Intent Handlers
