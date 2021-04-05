@@ -114,7 +114,13 @@ class VolumeSkill(MycroftSkill):
         self.add_event('recognizer_loop:record_end',
                        self.unduck)
 
-        self.vol_before_mute = self.__get_system_volume()
+        #set the volume to default_level if the system vol is different to default_level
+        vol_default = self.__level_to_volume(self.settings["default_level"])
+        vol_sys = self.__get_system_volume()
+        if vol_sys != vol_default:
+            self._setvolume(vol_default, emit=False)
+        self.vol_before_mute = vol_default
+
 
     @property
     def mixer(self):
