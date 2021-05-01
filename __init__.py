@@ -72,7 +72,14 @@ class VolumeSkill(MycroftSkill):
         try:
             # If there are only 1 mixer use that one
             mixers = alsa_mixers()
-            if len(mixers) == 1:
+            custom_settings = self.settings.get('use_custom_audio_settings', False)
+            if custom_settings:
+                # In case of custom settings use those
+                card_index = self.settings.get('card_index', -1)
+                control_name = self.settings.get('control_name', 'Master')
+                mixer = Mixer(control=control_name, cardindex=card_index)
+            elif len(mixers) == 1:
+                # If there are only 1 mixer use that one
                 mixer = Mixer(mixers[0])
             elif 'Master' in mixers:
                 # Try using the default mixer (Master)
