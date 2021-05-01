@@ -6,3 +6,17 @@ skillMetadata:
       type: checkbox
       label: Duck while listening
       value: "true"
+  - name: Custom audio settings
+    fields:
+    - name: use_custom_audio_settings
+      type: checkbox
+      label: Use custom audio settings
+      value: "false"
+    - name: card_index
+      type: number
+      label: Sound card index
+      value: -1
+    - name: control_name
+      type: text
+      label: Control name
+      value: "Master"
