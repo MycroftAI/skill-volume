@@ -47,6 +47,7 @@ class VolumeSkill(MycroftSkill):
 
     def __init__(self):
         super(VolumeSkill, self).__init__("VolumeSkill")
+        self.skill_control.category = 'system'
         self.settings["default_level"] = 6  # can be 0 (off) to 10 (max)
         self.settings["min_volume"] = 0     # can be 0 to 100
         if self.config_core['enclosure'].get('platform') == 'mycroft_mark_1':
