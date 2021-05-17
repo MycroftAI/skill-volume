@@ -97,8 +97,11 @@ class VolumeSkill(MycroftSkill):
 
     def initialize(self):
         # Register handlers to detect percentages as reported by STT
+        # Different STT engines might return "50%" or "50 percent"
         for i in range(101):  # numbers 0 to 100
             self.register_vocabulary(str(i) + '%', 'Percent')
+            percent_string = ' '.join([str(i), self.translate('percent')])
+            self.register_vocabulary(percent_string, 'Percent')
 
         # Register handlers for messagebus events
         self.add_event('mycroft.volume.increase',
@@ -135,7 +138,7 @@ class VolumeSkill(MycroftSkill):
         if emit:
             # Notify non-ALSA systems of volume change
             self.bus.emit(Message('mycroft.volume.set',
-                                  data={"percent": vol/100.0}))
+                                  data={"percent": vol / 100.0}))
 
     # Change Volume to X (Number 0 to) Intent Handlers
     @intent_handler(IntentBuilder("SetVolume").require("Volume")
@@ -361,7 +364,7 @@ class VolumeSkill(MycroftSkill):
             self.log.debug('Volume before mute: {}'.format(vol))
         else:
             vol_msg = self.bus.wait_for_response(
-                                Message("mycroft.volume.get", {'show': show}))
+                Message("mycroft.volume.get", {'show': show}))
             if vol_msg:
                 vol = int(vol_msg.data["percent"] * 100)
 
@@ -383,7 +386,7 @@ class VolumeSkill(MycroftSkill):
                 elif (level > self.MAX_LEVEL):
                     # Guess that the user said something like 100 percent
                     # so convert that into a level value
-                    level = self.MAX_LEVEL * level/100
+                    level = self.MAX_LEVEL * level / 100
             except ValueError:
                 pass
 
