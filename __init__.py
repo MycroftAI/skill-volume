@@ -97,8 +97,11 @@ class VolumeSkill(MycroftSkill):
 
     def initialize(self):
         # Register handlers to detect percentages as reported by STT
+        # Different STT engines might return "50%" or "50 percent"
         for i in range(101):  # numbers 0 to 100
             self.register_vocabulary(str(i) + '%', 'Percent')
+            percent_string = ' '.join([str(i), self.translate('percent')])
+            self.register_vocabulary(percent_string, 'Percent')
 
         # Register handlers for messagebus events
         self.add_event('mycroft.volume.increase',
