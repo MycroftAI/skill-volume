@@ -72,6 +72,8 @@ Feature: volume control
   Examples: change volume to a percent
     | change volume to a percent |
     | volume 80 percent |
+    | set volume to 70 percent |
+    | set volume to 87% |
 
   Scenario Outline: max volume
     Given an english speaking user
