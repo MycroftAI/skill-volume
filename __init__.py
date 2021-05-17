@@ -135,7 +135,7 @@ class VolumeSkill(MycroftSkill):
         if emit:
             # Notify non-ALSA systems of volume change
             self.bus.emit(Message('mycroft.volume.set',
-                                  data={"percent": vol/100.0}))
+                                  data={"percent": vol / 100.0}))
 
     # Change Volume to X (Number 0 to) Intent Handlers
     @intent_handler(IntentBuilder("SetVolume").require("Volume")
@@ -361,7 +361,7 @@ class VolumeSkill(MycroftSkill):
             self.log.debug('Volume before mute: {}'.format(vol))
         else:
             vol_msg = self.bus.wait_for_response(
-                                Message("mycroft.volume.get", {'show': show}))
+                Message("mycroft.volume.get", {'show': show}))
             if vol_msg:
                 vol = int(vol_msg.data["percent"] * 100)
 
@@ -383,7 +383,7 @@ class VolumeSkill(MycroftSkill):
                 elif (level > self.MAX_LEVEL):
                     # Guess that the user said something like 100 percent
                     # so convert that into a level value
-                    level = self.MAX_LEVEL * level/100
+                    level = self.MAX_LEVEL * level / 100
             except ValueError:
                 pass
 
