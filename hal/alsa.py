@@ -31,40 +31,26 @@ class AlsaHAL(HAL):
 
     This class will be deprecated at the earliest possible moment.
     """
-    def __init__(self):
-        super().__init__()
+    def __init__(self, settings):
+        super().__init__(settings)
+        self._mixer = get_alsa_mixer()
 
-    def _get_volume(self, message):
+    def _get_volume(self, message=None):
         """Get the current volume level."""
-        pass
+        volume = min(self._mixer.getvolume()[0], self.max_volume)
+        LOG.debug('Current volume: {}'.format(volume))
+        return volume
 
     def _set_volume(self, message):
         """Set the volume level."""
-        pass
-
-    def _decrease_volume(self, message):
-        """Decrease the volume by 10%."""
-        pass
-
-    def _increase_volume(self, message):
-        """Increase the volume by 10%."""
-        pass
-
-    def _mute_volume(self, message):
-        """Mute the audio output."""
-        pass
-    
-    def _unmute_volume(self, message):
-        """Unmute the audio output returning to previous volume level."""
-        pass
-
-    def _duck(self, message):
-        """Temporarily duck (significantly lower) audio output."""
-        pass
-
-    def _unduck(self, message):
-        """Restore audio output volume after ducking."""
-        pass
+        target_volume = int(message.data['percent'] * 100)
+        settable_volume = self.constrain_volume(target_volume)
+        LOG.debug("Setting volume to: {}".format(settable_volume))
+        self._mixer.setvolume(settable_volume)
+        success_data = {'success': True, 'volume': settable_volume}
+        self.bus.emit(message.reply('mycroft.volume.updated', 
+                                    data=success_data))
+        return success_data
 
 def get_alsa_mixer():
     LOG.debug('Finding Alsa Mixer for control...')
