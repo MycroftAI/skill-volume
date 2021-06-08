@@ -12,13 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-"""This is a temporary module to emulate the Hardware Abstraction Layer (HAL).
 
-It is intended to make a simpler transition from the current Volume Skill that
-directly interfaces with ALSA, to one that communicates changes to the HAL via
-the message bus.
+from .alsa import AlsaHAL
 
-This module will be deprecated at the earliest possible moment.
-"""
-from .alsa import get_alsa_mixer
-from .hal import construct_HAL
+def construct_HAL(hal_type):
+    """Emulate the Hardware Abstraction Layer (HAL) for audio management.
+
+    This class will be deprecated at the earliest possible moment.
+    """
+    hal = None
+    if hal_type == 'pulseaudio':
+        # hal = PulseaudioHAL()
+        pass
+    if hal_type == 'ALSA':
+        hal = AlsaHAL()
+    return hal

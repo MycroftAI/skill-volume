@@ -21,7 +21,7 @@ from mycroft.skills.core import MycroftSkill, intent_handler
 from mycroft.util import play_wav
 from mycroft.util.parse import extract_number
 
-from .hal import get_alsa_mixer
+from .hal import construct_HAL, get_alsa_mixer
 
 
 ALSA_PLATFORMS = ['mycroft_mark_1', 'picroft', 'unknown']
@@ -57,6 +57,8 @@ class VolumeSkill(MycroftSkill):
         self.volume_sound = join(dirname(__file__), "blop-mark-diangelo.wav")
         self.vol_before_mute = None
         self._alsa_mixer = None
+        # Instantiate the HAL emulator
+        self.HAL = construct_HAL('ALSA')
 
     def _clear_mixer(self):
         """For Unknown platforms reinstantiate the mixer.
@@ -108,10 +110,11 @@ class VolumeSkill(MycroftSkill):
         # TODO: Remove this and control volume at the Enclosure level in
         # response to the mycroft.volume.set message.
 
-        if emit:
-            # Notify non-ALSA systems of volume change
-            self.bus.emit(Message('mycroft.volume.set',
-                                  data={"percent": vol/100.0}))
+        # if emit:
+        # Notify non-ALSA systems of volume change
+        self.log.info("YESYINGEINSELMSHlkjnrgeknjrgkljnlkenr")
+        self.bus.emit(Message('mycroft.volume.set',
+                                data={"percent": vol/100.0}))
 
     # Change Volume to X (Number 0 to) Intent Handlers
     @intent_handler(IntentBuilder("SetVolume").require("Volume")

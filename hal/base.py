@@ -20,19 +20,28 @@ Layer (HAL). The Volume Skill will be emitting messages to the bus, and the
 HAL will be responsible for managing the system state.
 """
 
-from alsaaudio import Mixer, mixers as alsa_mixers
+from mycroft.messagebus.client import MessageBusClient
+from mycroft.util import LOG, start_message_bus_client
 
-from mycroft.util import LOG
-
-from .base import HAL
-
-class AlsaHAL(HAL):
-    """Emulate the Hardware Abstraction Layer (HAL) for ALSA.
+class HAL():
+    """Emulate the Hardware Abstraction Layer (HAL) for audio.
 
     This class will be deprecated at the earliest possible moment.
     """
     def __init__(self):
-        super().__init__()
+        self.bus = MessageBusClient()
+        self.register_volume_control_handlers()
+        start_message_bus_client("AUDIO_HAL", self.bus)
+    
+    def register_volume_control_handlers(self):
+        self.bus.on('mycroft.volume.get', self._get_volume)
+        self.bus.on('mycroft.volume.set', self._set_volume)
+        self.bus.on('mycroft.volume.increase', self._increase_volume)
+        self.bus.on('mycroft.volume.decrease', self._decrease_volume)
+        self.bus.on('mycroft.volume.mute', self._mute_volume)
+        self.bus.on('mycroft.volume.unmute', self._unmute_volume)
+        self.bus.on('recognizer_loop:record_begin', self._duck)
+        self.bus.on('recognizer_loop:record_end', self._unduck)
 
     def _get_volume(self, message):
         """Get the current volume level."""
@@ -65,31 +74,3 @@ class AlsaHAL(HAL):
     def _unduck(self, message):
         """Restore audio output volume after ducking."""
         pass
-
-def get_alsa_mixer():
-    LOG.debug('Finding Alsa Mixer for control...')
-    mixer = None
-    try:
-        # If there are only 1 mixer use that one
-        mixers = alsa_mixers()
-        if len(mixers) == 1:
-            mixer = Mixer(mixers[0])
-        elif 'Master' in mixers:
-            # Try using the default mixer (Master)
-            mixer = Mixer('Master')
-        elif 'PCM' in mixers:
-            # PCM is another common one
-            mixer = Mixer('PCM')
-        elif 'Digital' in mixers:
-            # My mixer is called 'Digital' (JustBoom DAC)
-            mixer = Mixer('Digital')
-        else:
-            # should be equivalent to 'Master'
-            mixer = Mixer()
-    except Exception:
-        # Retry instanciating the mixer with the built-in default
-        try:
-            mixer = Mixer()
-        except Exception as e:
-            LOG.error('Couldn\'t allocate mixer, {}'.format(repr(e)))
-    return mixer
