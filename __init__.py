@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from alsaaudio import Mixer, mixers as alsa_mixers
 from os.path import dirname, join
 
 from adapt.intent import IntentBuilder
@@ -21,6 +20,8 @@ from mycroft.messagebus.message import Message
 from mycroft.skills.core import MycroftSkill, intent_handler
 from mycroft.util import play_wav
 from mycroft.util.parse import extract_number
+
+from .hal import get_alsa_mixer
 
 
 ALSA_PLATFORMS = ['mycroft_mark_1', 'picroft', 'unknown']
@@ -55,7 +56,7 @@ class VolumeSkill(MycroftSkill):
             self.settings["max_volume"] = 100   # can be 0 to 100
         self.volume_sound = join(dirname(__file__), "blop-mark-diangelo.wav")
         self.vol_before_mute = None
-        self._mixer = None
+        self._alsa_mixer = None
 
     def _clear_mixer(self):
         """For Unknown platforms reinstantiate the mixer.
@@ -64,36 +65,9 @@ class VolumeSkill(MycroftSkill):
         """
         platform = self.config_core['enclosure'].get('platform', 'unknown')
         if platform != 'mycroft_mark_1':
-            self._mixer = None
+            self._alsa_mixer = None
 
-    def _get_mixer(self):
-        self.log.debug('Finding Alsa Mixer for control...')
-        mixer = None
-        try:
-            # If there are only 1 mixer use that one
-            mixers = alsa_mixers()
-            if len(mixers) == 1:
-                mixer = Mixer(mixers[0])
-            elif 'Master' in mixers:
-                # Try using the default mixer (Master)
-                mixer = Mixer('Master')
-            elif 'PCM' in mixers:
-                # PCM is another common one
-                mixer = Mixer('PCM')
-            elif 'Digital' in mixers:
-                # My mixer is called 'Digital' (JustBoom DAC)
-                mixer = Mixer('Digital')
-            else:
-                # should be equivalent to 'Master'
-                mixer = Mixer()
-        except Exception:
-            # Retry instanciating the mixer with the built-in default
-            try:
-                mixer = Mixer()
-            except Exception as e:
-                self.log.error('Couldn\'t allocate mixer, {}'.format(repr(e)))
-        self._mixer = mixer
-        return mixer
+    
 
     def initialize(self):
         # Register handlers to detect percentages as reported by STT
@@ -120,7 +94,9 @@ class VolumeSkill(MycroftSkill):
     def mixer(self):
         platform = self.config_core['enclosure'].get('platform', 'unknown')
         if platform in ALSA_PLATFORMS:
-            return self._mixer or self._get_mixer()
+            if self._alsa_mixer is None:
+                self._alsa_mixer = get_alsa_mixer()
+            return self._alsa_mixer
         else:
             return None
 
