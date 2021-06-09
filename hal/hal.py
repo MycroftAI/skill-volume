@@ -15,15 +15,16 @@
 
 from .alsa import AlsaHAL
 
-def construct_HAL(hal_type, settings):
+class HALFactory:
     """Emulate the Hardware Abstraction Layer (HAL) for audio management.
 
     This class will be deprecated at the earliest possible moment.
     """
-    hal = None
-    if hal_type == 'ALSA':
-        hal = AlsaHAL(settings)
-    if hal_type == 'pulseaudio':
-        # hal = PulseaudioHAL(settings)
-        pass
-    return hal
+    CLASSES = {
+        "ALSA": AlsaHAL
+    }
+
+    @staticmethod
+    def create(hal_type, settings):
+        hal = HALFactory.CLASSES.get(hal_type)
+        return hal(settings)

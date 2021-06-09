@@ -21,7 +21,7 @@ from mycroft.skills.core import MycroftSkill, intent_handler
 from mycroft.util import play_wav
 from mycroft.util.parse import extract_number
 
-from .hal import construct_HAL, get_alsa_mixer
+from .hal import HALFactory
 
 
 ALSA_PLATFORMS = ['mycroft_mark_1', 'picroft', 'unknown']
@@ -58,7 +58,7 @@ class VolumeSkill(MycroftSkill):
         # Instantiate the HAL emulator
         self.platform = self.config_core['enclosure'].get('platform', 'unknown')
         if self.platform in ALSA_PLATFORMS:
-            self.HAL = construct_HAL('ALSA', self.settings)
+            self.HAL = HALFactory.create('ALSA', self.settings)
         else:
             self.HAL = None    
 

@@ -21,4 +21,4 @@ the message bus.
 This module will be deprecated at the earliest possible moment.
 """
 from .alsa import get_alsa_mixer
-from .hal import construct_HAL
+from .hal import HALFactory
