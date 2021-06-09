@@ -14,6 +14,7 @@
 #
 
 from .alsa import AlsaHAL
+from .mark1 import Mark1HAL
 
 class HALFactory:
     """Emulate the Hardware Abstraction Layer (HAL) for audio management.
@@ -21,7 +22,8 @@ class HALFactory:
     This class will be deprecated at the earliest possible moment.
     """
     CLASSES = {
-        "ALSA": AlsaHAL
+        "ALSA": AlsaHAL,
+        "Mark_1": Mark1HAL
     }
 
     @staticmethod
