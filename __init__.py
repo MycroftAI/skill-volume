@@ -44,6 +44,19 @@ class VolumeSkill(MycroftSkill):
         'quiet': 3
     }
 
+    def _translate_volume_words(self):
+        """
+        For volume words translation
+        Any words in volume.words.value must also be contained in Level.voc
+        """
+        volume_words = self.translate_namedvalues('volume.words')
+        if volume_words:
+            new_volume_words = {}
+            for volume_words_key in self.VOLUME_WORDS:
+                if volume_words.get(volume_words_key):
+                    new_volume_words[volume_words.get(volume_words_key)] = self.VOLUME_WORDS[volume_words_key]
+            self.VOLUME_WORDS = new_volume_words
+
     def __init__(self):
         super(VolumeSkill, self).__init__("VolumeSkill")
         self.settings["default_level"] = 6  # can be 0 (off) to 10 (max)
@@ -55,13 +68,7 @@ class VolumeSkill(MycroftSkill):
         self.volume_sound = join(dirname(__file__), "blop-mark-diangelo.wav")
         self.vol_before_mute = None
         self._mixer = None
-        volume_words = self.translate_namedvalues('volume.words', delim=',')
-        if volume_words != {}:
-            new_volume_words = {}
-            for volume_words_key in self.VOLUME_WORDS:
-                if volume_words.get(volume_words_key) != None:
-                    new_volume_words[volume_words.get(volume_words_key)] = self.VOLUME_WORDS[volume_words_key]
-            self.VOLUME_WORDS = new_volume_words
+        self._translate_volume_words()
 
     def _clear_mixer(self):
         """For Unknown platforms reinstantiate the mixer.
@@ -374,8 +381,8 @@ class VolumeSkill(MycroftSkill):
         return vol
 
     def __get_volume_level(self, message, default=None):
-        """ Retrievs volume from message. """
-        level_str = message.data.get('Level', default)
+        """ Retrieves volume from message. """
+        level_str = str(message.data.get('Level', default))
         level = self.settings["default_level"]
 
         try:
