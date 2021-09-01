@@ -45,8 +45,8 @@ class VolumeSkill(MycroftSkill):
     }
 
     def _translate_volume_words(self):
-        """
-        For volume words translation
+        """Translate VOLUME_WORDS keys for non-english support.
+
         Any words in volume.words.value must also be contained in Level.voc
         """
         volume_words = self.translate_namedvalues('volume.words')
@@ -54,7 +54,8 @@ class VolumeSkill(MycroftSkill):
             new_volume_words = {}
             for volume_words_key in self.VOLUME_WORDS:
                 if volume_words.get(volume_words_key):
-                    new_volume_words[volume_words.get(volume_words_key)] = self.VOLUME_WORDS[volume_words_key]
+                    new_volume_words[volume_words.get(
+                        volume_words_key)] = self.VOLUME_WORDS[volume_words_key]
             self.VOLUME_WORDS = new_volume_words
 
     def __init__(self):
