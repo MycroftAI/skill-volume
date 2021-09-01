@@ -38,12 +38,25 @@ class VolumeSkill(MycroftSkill):
     MIN_LEVEL = 0
     MAX_LEVEL = 10
 
-    # TODO: Translation layer (have to match word in Level.voc)
     VOLUME_WORDS = {
         'loud': 9,
         'normal': 6,
         'quiet': 3
     }
+
+    def _translate_volume_words(self):
+        """Translate VOLUME_WORDS keys for non-english support.
+
+        Any words in volume.words.value must also be contained in Level.voc
+        """
+        volume_words = self.translate_namedvalues('volume.words')
+        if volume_words:
+            new_volume_words = {}
+            for volume_words_key in self.VOLUME_WORDS:
+                if volume_words.get(volume_words_key):
+                    new_volume_words[volume_words.get(
+                        volume_words_key)] = self.VOLUME_WORDS[volume_words_key]
+            self.VOLUME_WORDS = new_volume_words
 
     def __init__(self):
         super(VolumeSkill, self).__init__("VolumeSkill")
@@ -56,6 +69,7 @@ class VolumeSkill(MycroftSkill):
         self.volume_sound = join(dirname(__file__), "blop-mark-diangelo.wav")
         self.vol_before_mute = None
         self._mixer = None
+        self._translate_volume_words()
 
     def _clear_mixer(self):
         """For Unknown platforms reinstantiate the mixer.
