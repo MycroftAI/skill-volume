@@ -1,7 +1,7 @@
-reduire
-reduire
-abaisser
+(reduire|plus bas)
+réduire
+(abaisse(r|)|diminue(r|))
 moins fort
 (plus faible|plus doux)
 moins
-(baisse|diminue)
+(baisse(r|)|diminue(r|))
