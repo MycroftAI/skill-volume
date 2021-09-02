@@ -4,7 +4,7 @@ from behave import given, then
 from mycroft.messagebus import Message
 from mycroft.audio import wait_while_speaking
 
-from test.integrationtests.voight_kampff import emit_utterance
+from test.integrationtests.voight_kampff import emit_utterance, then_wait
 
 
 @given("Mycroft audio is muted")
@@ -34,37 +34,25 @@ def given_volume_is_ten(context):
 
 @then('"mycroft-volume" should decrease the volume')
 def then_decrease(context):
-    cnt = 0
-    msgs = context.bus.get_messages('mycroft.volume.set')
+    def check_volume_decreased(message):
+        err_info = "Volume hasn't decreased!\n"
+        return message.data['percent'] < context.volume, err_info
 
-    while msgs == []:
-        if cnt > 20:
-            assert False, "Message not found"
-            break
-        else:
-            cnt += 1
-        sleep(0.5)
-        msgs = context.bus.get_messages('mycroft.volume.set')
-    if msgs:
-        err_info = "Volume hasn't decreased!"
-        print(msgs[0].data['percent'])
-        assert msgs[0].data['percent'] < context.volume, err_info
+    passed, debug = then_wait('mycroft.volume.set',
+                              check_volume_decreased,
+                              context)
+
+    assert passed, debug
 
 
 @then('"mycroft-volume" should increase the volume')
 def then_increase(context):
-    cnt = 0
-    msgs = context.bus.get_messages('mycroft.volume.set')
+    def check_volume_increased(message):
+        err_info = "Volume hasn't increased!\n"
+        return message.data['percent'] > context.volume, err_info
 
-    while msgs == []:
-        if cnt > 20:
-            assert False, "Message not found"
-            break
-        else:
-            cnt += 1
-        sleep(0.5)
-        msgs = context.bus.get_messages('mycroft.volume.set')
-    if msgs:
-        err_info = "Volume hasn't increased!"
-        print(msgs[0].data['percent'])
-        assert msgs[0].data['percent'] > context.volume, err_info
+    passed, debug = then_wait('mycroft.volume.set',
+                              check_volume_increased,
+                              context)
+
+    assert passed, debug
