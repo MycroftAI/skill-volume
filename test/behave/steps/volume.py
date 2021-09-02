@@ -47,7 +47,6 @@ def then_decrease(context):
 
 @then('"mycroft-volume" should increase the volume')
 def then_increase(context):
-    cnt = 0
     def check_volume_increased(message):
         err_info = "Volume hasn't increased!\n"
         return message.data['percent'] > context.volume, err_info
