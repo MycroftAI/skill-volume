@@ -23,7 +23,8 @@ from mycroft.util import play_wav
 from mycroft.util.parse import extract_number
 
 
-ALSA_PLATFORMS = ['mycroft_mark_1', 'picroft', 'unknown']
+ALSA_PLATFORMS = ['mycroft_mark_1', 'mycroft_mark_2', 'picroft', 'unknown']
+ALSA_MIXER_NAMES = ['Master', 'PCM', 'Digital', 'Playback']
 
 
 class VolumeSkill(MycroftSkill):
@@ -84,22 +85,20 @@ class VolumeSkill(MycroftSkill):
         self.log.debug('Finding Alsa Mixer for control...')
         mixer = None
         try:
-            # If there are only 1 mixer use that one
             mixers = alsa_mixers()
             if len(mixers) == 1:
+                # If there are only 1 mixer use that one
                 mixer = Mixer(mixers[0])
-            elif 'Master' in mixers:
-                # Try using the default mixer (Master)
-                mixer = Mixer('Master')
-            elif 'PCM' in mixers:
-                # PCM is another common one
-                mixer = Mixer('PCM')
-            elif 'Digital' in mixers:
-                # My mixer is called 'Digital' (JustBoom DAC)
-                mixer = Mixer('Digital')
             else:
-                # should be equivalent to 'Master'
-                mixer = Mixer()
+                # Look for known mixer names
+                for mixer_name in mixers:
+                    if mixer_name in ALSA_MIXER_NAMES:
+                        mixer = Mixer(mixer_name)
+                        break
+
+                if mixer is None:
+                    # should be equivalent to 'Master'
+                    mixer = Mixer()
         except Exception:
             # Retry instanciating the mixer with the built-in default
             try:
