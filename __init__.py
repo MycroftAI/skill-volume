@@ -16,7 +16,6 @@ from alsaaudio import Mixer, mixers as alsa_mixers
 from os.path import dirname, join
 
 from adapt.intent import IntentBuilder
-from mycroft.audio import wait_while_speaking
 from mycroft.messagebus.message import Message
 from mycroft.skills.core import MycroftSkill, intent_handler
 from mycroft.util import play_wav
@@ -155,38 +154,42 @@ class VolumeSkill(MycroftSkill):
                     .optionally("Increase").optionally("Decrease")
                     .optionally("To").require("Level"))
     def handle_set_volume(self, message):
-        self._clear_mixer()
-        default_vol = self.__get_system_volume(50)
+        with self.activity():
+            self._clear_mixer()
+            default_vol = self.__get_system_volume(50)
 
-        level = self.__get_volume_level(message, default_vol)
-        self._setvolume(self.__level_to_volume(level))
-        if level == self.MAX_LEVEL:
-            self.speak_dialog('max.volume')
-        else:
-            self.speak_dialog('set.volume', data={'volume': level})
+            level = self.__get_volume_level(message, default_vol)
+            self._setvolume(self.__level_to_volume(level))
+            if level == self.MAX_LEVEL:
+                self.speak_dialog('max.volume', wait=True)
+            else:
+                self.speak_dialog('set.volume', data={'volume': level}, wait=True)
 
     # Set Volume Percent Intent Handlers
     @intent_handler(IntentBuilder("SetVolumePercent").require("Volume")
                     .optionally("Increase").optionally("Decrease")
                     .optionally("To").require("Percent"))
     def handle_set_volume_percent(self, message):
-        self._clear_mixer()
-        percent = extract_number(message.data['utterance'].replace('%', ''))
-        percent = int(percent)
-        self._setvolume(percent)
-        self.speak_dialog('set.volume.percent', data={'level': percent})
+        with self.activity():
+            self._clear_mixer()
+            percent = extract_number(message.data['utterance'].replace('%', ''))
+            percent = int(percent)
+            self._setvolume(percent)
+            self.speak_dialog('set.volume.percent', data={'level': percent}, wait=True)
 
     # Volume Status Intent Handlers
     @intent_handler(IntentBuilder("QueryVolume").optionally("Query")
                     .require("Volume"))
     def handle_query_volume(self, message):
-        self._clear_mixer()
-        level = self.__volume_to_level(self.__get_system_volume(0, show=True))
-        self.speak_dialog('volume.is', data={'volume': round(level)})
+        with self.activity():
+            self._clear_mixer()
+            level = self.__volume_to_level(self.__get_system_volume(0, show=True))
+            self.speak_dialog('volume.is', data={'volume': round(level)}, wait=True)
 
     @intent_handler(IntentBuilder("QueryVolumePhrase").require("QueryPhrase")
                     .optionally("Volume"))
     def handle_query_volume_phrase(self, message):
+        # will be in activity
         self.handle_query_volume(message)
 
     def __communicate_volume_change(self, message, dialog, code, changed):
@@ -196,42 +199,50 @@ class VolumeSkill(MycroftSkill):
                 play_wav(self.volume_sound)
         else:
             if (not changed) and (code != 0):
-                self.speak_dialog('already.max.volume', data={'volume': code})
+                self.speak_dialog('already.max.volume', data={'volume': code}, wait=True)
 
     # Increase Volume Intent Handlers
     @intent_handler(IntentBuilder("IncreaseVolume").require("Volume")
                     .require("Increase"))
     def handle_increase_volume(self, message):
-        self.__communicate_volume_change(message, 'increase.volume',
-                                         *self.__update_volume(+1))
+        with self.activity():
+            self.__communicate_volume_change(message, 'increase.volume',
+                                             *self.__update_volume(+1))
 
     @intent_handler(IntentBuilder("IncreaseVolumeSet").require("Set")
                     .optionally("Volume").require("Increase"))
     def handle_increase_volume_set(self, message):
         self._clear_mixer()
+
+        # will be in activity
         self.handle_increase_volume(message)
 
     @intent_handler(IntentBuilder("IncreaseVolumePhrase")
                     .require("IncreasePhrase"))
     def handle_increase_volume_phrase(self, message):
         self._clear_mixer()
+
+        # will be in activity
         self.handle_increase_volume(message)
 
     # Decrease Volume Intent Handlers
     @intent_handler(IntentBuilder("DecreaseVolume").require("Volume")
                     .require("Decrease"))
     def handle_decrease_volume(self, message):
-        self.__communicate_volume_change(message, 'decrease.volume',
-                                         *self.__update_volume(-1))
+        with self.activity():
+            self.__communicate_volume_change(message, 'decrease.volume',
+                                             *self.__update_volume(-1))
 
     @intent_handler(IntentBuilder("DecreaseVolumeSet").require("Set")
                     .optionally("Volume").require("Decrease"))
     def handle_decrease_volume_set(self, message):
+        # will be in activity
         self.handle_decrease_volume(message)
 
     @intent_handler(IntentBuilder("DecreaseVolumePhrase")
                     .require("DecreasePhrase"))
     def handle_decrease_volume_phrase(self, message):
+        # will be in activity
         self.handle_decrease_volume(message)
 
     # Maximum Volume Intent Handlers
@@ -239,18 +250,19 @@ class VolumeSkill(MycroftSkill):
                     .require("Volume").optionally("Increase")
                     .require("MaxVolume"))
     def handle_max_volume(self, message):
-        self._clear_mixer()
-        self._setvolume(self.settings["max_volume"])
-        speak_message = message.data.get('speak_message', True)
-        if speak_message:
-            self.speak_dialog('max.volume')
-            wait_while_speaking()
-        self.bus.emit(Message('mycroft.volume.duck'))
+        # will be in activity
+            self._clear_mixer()
+            self._setvolume(self.settings["max_volume"])
+            speak_message = message.data.get('speak_message', True)
+            if speak_message:
+                self.speak_dialog('max.volume', wait=True)
+            self.bus.emit(Message('mycroft.volume.duck'))
 
     @intent_handler(IntentBuilder("MaxVolumeIncreaseMax")
                     .require("MaxVolumePhrase").optionally("Volume")
                     .require("Increase").optionally("MaxVolume"))
     def handle_max_volume_increase_to_max(self, message):
+        # will be in activity
         self.handle_max_volume(message)
 
     def duck(self, message):
@@ -268,8 +280,7 @@ class VolumeSkill(MycroftSkill):
         self.vol_before_mute = self.__get_system_volume()
         self.log.debug(self.vol_before_mute)
         if speak:
-            self.speak_dialog('mute.volume')
-            wait_while_speaking()
+            self.speak_dialog('mute.volume', wait=True)
         self._setvolume(0, emit=False)
         self.bus.emit(Message('mycroft.volume.duck'))
 
@@ -277,8 +288,9 @@ class VolumeSkill(MycroftSkill):
     @intent_handler(IntentBuilder("MuteVolume").require(
         "Volume").require("Mute"))
     def handle_mute_volume(self, message):
-        self._clear_mixer()
-        self._mute_volume(speak=message.data.get('speak_message', True))
+        with self.activity():
+            self._clear_mixer()
+            self._mute_volume(speak=message.data.get('speak_message', True))
 
     def _unmute_volume(self, message=None, speak=False):
         if self.vol_before_mute is None:
@@ -293,14 +305,16 @@ class VolumeSkill(MycroftSkill):
         if speak:
             self.speak_dialog('reset.volume',
                               data={'volume':
-                                    self.settings["default_level"]})
+                                    self.settings["default_level"]},
+                              wait=True)
 
     # Unmute/Reset Volume Intent Handlers
     @intent_handler(IntentBuilder("UnmuteVolume").require("Volume")
                     .require("Unmute"))
     def handle_unmute_volume(self, message):
-        self._clear_mixer()
-        self._unmute_volume(speak=message.data.get('speak_message', True))
+        with self.activity():
+            self._clear_mixer()
+            self._unmute_volume(speak=message.data.get('speak_message', True))
 
     def __volume_to_level(self, volume):
         """
