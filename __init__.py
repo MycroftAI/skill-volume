@@ -18,7 +18,6 @@ from os.path import dirname, join
 from adapt.intent import IntentBuilder
 from mycroft.messagebus.message import Message
 from mycroft.skills.core import MycroftSkill, intent_handler
-from mycroft.util import play_wav
 from mycroft.util.parse import extract_number
 
 
@@ -196,7 +195,8 @@ class VolumeSkill(MycroftSkill):
         play_sound = message.data.get('play_sound', False)
         if play_sound:
             if changed:
-                play_wav(self.volume_sound)
+                sound_uri = f"file://{self.volume_sound}"
+                self.play_sound_uri(sound_uri)
         else:
             if (not changed) and (code != 0):
                 self.speak_dialog('already.max.volume', data={'volume': code}, wait=True)
