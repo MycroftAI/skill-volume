@@ -5,3 +5,4 @@ settings.json
 
 # Vim temp files
 .*.sw?
+.wh.*
