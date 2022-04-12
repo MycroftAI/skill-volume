@@ -8,6 +8,7 @@ Feature: volume control
 
   Examples: turning up the volume
     | volume up |
+    | increase volume |
     | turn it up |
     | volume up |
     | louder |
@@ -20,18 +21,6 @@ Feature: volume control
     | crank it up |
     | crank volume |
     | make it louder |
-
-  @xfail @cifailonly
-  Scenario Outline: Failing in CI - turning up the volume
-    Given an english speaking user
-     And the volume is set to 5
-     When the user says "<volume up>"
-     Then "mycroft-volume" should increase the volume
-
-  Examples: turning up the volume - CI failing examples
-    | volume up |
-    | volume up |
-    | increase volume |
 
   Scenario Outline: turning down the volume
     Given an english speaking user
