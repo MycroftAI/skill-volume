@@ -139,12 +139,13 @@ class VolumeSkill(MycroftSkill):
         """
         # Update ALSA
         if self.mixer:
-            self.log.debug(vol)
+            self.log.debug(f"Setting volume to {vol}")
             self.mixer.setvolume(vol)
 
         if emit:
+            volume_percentage = vol / 100.0
             # Notify non-ALSA systems of volume change
-            self.bus.emit(Message("mycroft.volume.set", data={"percent": vol / 100.0}))
+            self.bus.emit(Message("mycroft.volume.set", data={"percent": volume_percentage}))
 
     # Change Volume to X (Number 0 to) Intent Handlers
     @intent_handler(
@@ -306,13 +307,12 @@ class VolumeSkill(MycroftSkill):
 
     @skill_api_method
     def _mute_volume(self, message=None, speak=False):
-        self.log.debug("MUTING!")
+        self.log.info("Muting audio output.")
         self.vol_before_mute = self.__get_system_volume()
         self.log.debug(self.vol_before_mute)
         if speak:
             self.speak_dialog("mute.volume", wait=True)
-        self._set_volume(0, emit=False)
-        self.bus.emit(Message("mycroft.volume.duck"))
+        self._set_volume(0)
 
     # Mute Volume Intent Handlers
     @intent_handler(IntentBuilder("MuteVolume").require("Volume").require("Mute"))
@@ -339,8 +339,7 @@ class VolumeSkill(MycroftSkill):
             vol = self.vol_before_mute
         self.vol_before_mute = None
 
-        self._set_volume(vol, emit=False)
-        self.bus.emit(Message("mycroft.volume.unduck"))
+        self._set_volume(vol)
 
         if speak:
             self.speak_dialog(
@@ -355,6 +354,17 @@ class VolumeSkill(MycroftSkill):
         with self.activity():
             self._clear_mixer()
             self._unmute_volume(speak=message.data.get("speak_message", True))
+
+    @intent_handler("Unmute.intent")
+    def handle_unmute_short_phrases(self, message):
+        """Handle short but explicit unmute phrases
+
+        Examples:
+        - Unmute
+        - Turn mute off
+        - Turn sound back on
+        """
+        self.handle_unmute_volume(message)
 
     def __volume_to_level(self, volume):
         """

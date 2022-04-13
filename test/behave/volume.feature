@@ -148,8 +148,6 @@ Feature: volume control
     | change volume to default volume |
     | set volume to default volume |
 
-  @xfailwip
-  # This doesn't actually mute the audio...
   Scenario Outline: mute audio
     Given an english speaking user
      And the volume is set to 5
@@ -167,7 +165,6 @@ Feature: volume control
     | shut up |
     | be quiet |
 
-  @xfailwip
   Scenario Outline: unmute audio
     Given an english speaking user
      And the volume is set to 6
@@ -179,14 +176,16 @@ Feature: volume control
   Examples: unmute audio
     | unmute audio |
     | unmute audio |
+    | unmute all sound |
     | unmute the volume |
 
-  @xfail
-  Scenario Outline: Failing - unmute audio
+  Scenario Outline: Unmute audio - short explicit phrase
     Given an english speaking user
+     And the volume is set to 4
      And Mycroft audio is muted
      When the user says "<unmute audio>"
      Then "mycroft-volume" should reply with dialog from "reset.volume.dialog"
+      And the volume should be "4"
 
   Examples: unmute audio
     | unmute audio |
@@ -195,4 +194,3 @@ Feature: volume control
     | turn on sound |
     | turn muting off |
     | turn mute off |
-    | unmute all sound |

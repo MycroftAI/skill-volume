@@ -7,7 +7,7 @@ from mycroft.skills.api import SkillApi
 
 from test.integrationtests.voight_kampff import emit_utterance, then_wait
 
-DEFAULT_DELAY = 0.7
+DEFAULT_DELAY = 1.0
 
 def connect_to_skill(bus):
     """Setup Skill API connection"""
@@ -25,10 +25,13 @@ def check_volume_is(level, bus):
         if volume is set correctly, current volume as float
     """
     response = bus.wait_for_response(Message("mycroft.volume.get"))
-    if response and response.data.get("percent"):
-        is_volume_set = response.data["percent"] == level
-        return is_volume_set, response.data["percent"]
-    bus.clear_messages()
+    if response:
+        if response.data.get("muted"):
+            return 0.0 == level, 0.0
+        elif response.data.get("percent"):
+            actual_volume = response.data["percent"]
+            return actual_volume == level, actual_volume
+    return None, None
 
 
 @given("Mycroft audio is muted")
