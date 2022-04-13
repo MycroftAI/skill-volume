@@ -278,7 +278,6 @@ class VolumeSkill(MycroftSkill):
         speak_message = message.data.get("speak_message", True)
         if speak_message:
             self.speak_dialog("max.volume", wait=True)
-        self.bus.emit(Message("mycroft.volume.duck"))
 
     @intent_handler(
         IntentBuilder("MaxVolumeIncreaseMax")
