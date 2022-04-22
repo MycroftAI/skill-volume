@@ -38,8 +38,7 @@ def check_volume_is(level, bus):
 def given_muted(context):
     skill = connect_to_skill(context.bus)
     skill._mute_volume()
-    # context.bus.emit(Message('mycroft.volume.mute',
-    #                          data={'speak_message': False}))
+    sleep(DEFAULT_DELAY)
     is_volume_correct, actual_volume = check_volume_is(0.0, context.bus)
     assert (
         is_volume_correct
