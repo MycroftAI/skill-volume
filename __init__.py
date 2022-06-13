@@ -298,12 +298,16 @@ class VolumeSkill(MycroftSkill):
     def duck(self, message):
         self._clear_mixer()
         if self.settings.get("ducking", True):
-            self._mute_volume()
+            self.log.info("Ducking audio output.")
+            self.vol_before_mute = self.__get_system_volume()
+            self.log.debug(self.vol_before_mute)
+            volume_percentage = 0.0
+            self.bus.emit(Message("mycroft.volume.duck", data={"percent": volume_percentage}))
 
     def unduck(self, message):
         self._clear_mixer()
         if self.settings.get("ducking", True):
-            self._unmute_volume()
+            self.bus.emit(Message("mycroft.volume.unduck"))
 
     @skill_api_method
     def _mute_volume(self, message=None, speak=False):
